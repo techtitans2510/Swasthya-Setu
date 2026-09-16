@@ -1,0 +1,166 @@
+/**
+ * SwasthyaSetu Design System Tokens
+ * Source: Stitch Project 11062066934146902009 (Civic Health Infrastructure)
+ * Design Movement: Institutional Modernism & Civic Functionalism
+ */
+
+:root {
+  /* Brand Core Colors */
+  --color-primary: #0E4834;
+  --color-primary-dark: #0A3425;
+  --color-primary-light: #E6F4EA;
+  --color-primary-container: #0E4834;
+  --color-on-primary: #FFFFFF;
+  --color-on-primary-container: #7FB69C;
+  --color-primary-fixed: #B6EFD3;
+  --color-primary-fixed-dim: #9BD2B7;
+
+  /* Secondary - Clinical Referral Slate */
+  --color-secondary: #1D587A;
+  --color-secondary-dark: #133D55;
+  --color-secondary-light: #E0F2FE;
+  --color-secondary-container: #A4D8FF;
+  --color-on-secondary: #FFFFFF;
+  --color-on-secondary-container: #265F81;
+
+  /* Tertiary / Field Alert Amber */
+  --color-tertiary: #D97706;
+  --color-tertiary-light: #FEF3C7;
+  --color-tertiary-container: #633300;
+  --color-on-tertiary: #FFFFFF;
+  --color-on-tertiary-container: #FA9129;
+
+  /* Neutral Typography & Contrast */
+  --color-neutral: #24332D;
+  --color-neutral-muted: #52665D;
+  --color-neutral-subtle: #707973;
+  --color-outline: #707973;
+  --color-outline-variant: #C0C9C2;
+
+  /* Structural Surfaces & Borders */
+  --surface-canvas: #F8FAF8;
+  --surface-card: #FFFFFF;
+  --surface-subtle: #F1F5F2;
+  --surface-highlight: #ECFDF4;
+  --border-structural: #DDE5E0;
+  --border-emphasis: #C8D6CE;
+
+  /* Semantic Clinical Risk Stratification */
+  --risk-low-fg: #166534;
+  --risk-low-bg: #DCFCE7;
+  --risk-low-border: #86EFAC;
+
+  --risk-moderate-fg: #B45309;
+  --risk-moderate-bg: #FEF3C7;
+  --risk-moderate-border: #FCD34D;
+
+  --risk-high-fg: #C2410C;
+  --risk-high-bg: #FFEDD5;
+  --risk-high-border: #FDBA74;
+
+  --risk-emergency-fg: #B91C1C;
+  --risk-emergency-bg: #FEE2E2;
+  --risk-emergency-border: #FCA5A5;
+
+  /* Offline & Sync States */
+  --sync-online-fg: #065F46;
+  --sync-online-bg: #D1FAE5;
+  --sync-online-dot: #059669;
+
+  --sync-offline-fg: #92400E;
+  --sync-offline-bg: #FEF3C7;
+  --sync-offline-border: #FDE68A;
+  --sync-offline-dot: #D97706;
+
+  /* Role Badge Tokens */
+  --role-asha-bg: #E6F4EA;
+  --role-asha-fg: #135D43;
+  --role-asha-border: #A8DAB5;
+
+  --role-anm-bg: #E0F2FE;
+  --role-anm-fg: #0369A1;
+  --role-anm-border: #7DD3FC;
+
+  --role-doctor-bg: #F3E8FF;
+  --role-doctor-fg: #6B21A8;
+  --role-doctor-border: #D8B4FE;
+
+  --role-admin-bg: #FEF3C7;
+  --role-admin-fg: #92400E;
+  --role-admin-border: #FCD34D;
+
+  /* Typography Families */
+  --font-headline: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-body: 'Public Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-numeric: 'Public Sans', "SF Mono", Consolas, monospace;
+
+  /* Typography Scale */
+  --text-headline-xl: 700 2rem/2.5rem var(--font-headline);        /* 32px / 40px */
+  --text-headline-lg: 600 1.5rem/2rem var(--font-headline);        /* 24px / 32px */
+  --text-headline-md: 600 1.25rem/1.75rem var(--font-headline);    /* 20px / 28px */
+  --text-headline-sm: 600 1.125rem/1.625rem var(--font-headline);  /* 18px / 26px */
+
+  --text-body-lg: 400 1rem/1.5rem var(--font-body);                /* 16px / 24px */
+  --text-body-md: 400 0.875rem/1.25rem var(--font-body);           /* 14px / 20px */
+  --text-body-sm: 400 0.8125rem/1.125rem var(--font-body);         /* 13px / 18px */
+
+  --text-label-lg: 600 0.875rem/1.25rem var(--font-body);          /* 14px / 20px */
+  --text-label-md: 600 0.75rem/1rem var(--font-body);              /* 12px / 16px */
+  --text-label-sm: 700 0.6875rem/0.875rem var(--font-body);        /* 11px / 14px */
+  --text-numeric-id: 600 0.9375rem/1.25rem var(--font-numeric);    /* 15px / 20px */
+
+  /* Spacing Scale (4px multiples) */
+  --space-2xs: 0.125rem; /* 2px */
+  --space-xs: 0.25rem;   /* 4px */
+  --space-sm: 0.5rem;    /* 8px */
+  --space-md: 0.75rem;   /* 12px */
+  --space-base: 1rem;    /* 16px */
+  --space-lg: 1.5rem;    /* 24px */
+  --space-xl: 2rem;      /* 32px */
+  --space-2xl: 3rem;     /* 48px */
+
+  /* Layout Grids & Gutters */
+  --gutter-mobile: 0.75rem;
+  --gutter-desktop: 1.5rem;
+  --margin-mobile: 1rem;
+  --margin-tablet: 1.5rem;
+  --margin-desktop: 2rem;
+  --max-content-width: 1360px;
+
+  /* Shapes & Radii */
+  --radius-xs: 0.125rem; /* 2px */
+  --radius-sm: 0.25rem;  /* 4px */
+  --radius-md: 0.5rem;   /* 8px - default */
+  --radius-lg: 0.75rem;  /* 12px */
+  --radius-xl: 1rem;     /* 16px */
+  --radius-pill: 9999px;
+
+  /* Ergonomic Minimums for Field Touch */
+  --min-touch-target: 48px;
+
+  /* Elevation Tiers */
+  --elevation-0: none;
+  --elevation-1: 0 1px 2px rgba(16, 30, 25, 0.04);
+  --elevation-2: 0 2px 6px -1px rgba(14, 72, 52, 0.08), 0 1px 3px rgba(14, 72, 52, 0.05);
+  --elevation-3: 0 8px 24px -4px rgba(26, 36, 33, 0.12), 0 2px 6px -1px rgba(26, 36, 33, 0.04);
+
+  /* Transitions */
+  --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Multilingual typography line-height booster for Hindi/Marathi Devanagari matras */
+:lang(hi), :lang(mr), [data-lang="hi"], [data-lang="mr"] {
+  --text-headline-xl: 700 2rem/2.625rem var(--font-headline);
+  --text-headline-lg: 600 1.5rem/2.125rem var(--font-headline);
+  --text-headline-md: 600 1.25rem/1.875rem var(--font-headline);
+  --text-headline-sm: 600 1.125rem/1.75rem var(--font-headline);
+
+  --text-body-lg: 400 1rem/1.625rem var(--font-body);
+  --text-body-md: 400 0.875rem/1.375rem var(--font-body);
+  --text-body-sm: 400 0.8125rem/1.25rem var(--font-body);
+
+  --text-label-lg: 600 0.875rem/1.375rem var(--font-body);
+  --text-label-md: 600 0.75rem/1.125rem var(--font-body);
+  --text-label-sm: 700 0.6875rem/1rem var(--font-body);
+}

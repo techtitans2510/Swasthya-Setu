@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <rect width="120" height="120" rx="24" fill="#0E4834"/>
+  <circle cx="60" cy="60" r="44" stroke="#48BB78" stroke-width="2.5" stroke-dasharray="4 3" opacity="0.4"/>
+  <!-- Connecting bridge arch (Setu) -->
+  <path d="M28 72 C40 48, 80 48, 92 72" stroke="#E2F5ED" stroke-width="5" stroke-linecap="round"/>
+  <path d="M34 76 C46 56, 74 56, 86 76" stroke="#2B739E" stroke-width="3" stroke-linecap="round" opacity="0.85"/>
+  <!-- Central healthcare cross / healing bud -->
+  <path d="M60 32 L60 56 M48 44 L72 44" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="60" cy="44" r="3" fill="#34D399"/>
+  <!-- Community dots representing patient and primary health center -->
+  <circle cx="36" cy="72" r="5" fill="#E2F5ED"/>
+  <circle cx="84" cy="72" r="5" fill="#38BDF8"/>
+  <circle cx="60" cy="68" r="4" fill="#FEF08A"/>
+</svg>

@@ -1,0 +1,324 @@
+/**
+ * SwasthyaSetu Workflow Views CSS
+ * Operational layouts for ASHA, Doctor, and District Administrative portals
+ */
+
+/* ==========================================================================
+   METRIC SUMMARY TILES (Operational Dashboard)
+   ========================================================================== */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-base);
+  margin-bottom: var(--space-xl);
+}
+
+.metric-tile {
+  background-color: var(--surface-card);
+  border: 1px solid var(--border-structural);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  box-shadow: var(--elevation-1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.metric-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--elevation-2);
+}
+
+.metric-tile-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-sm);
+}
+
+.metric-tile-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-neutral-muted);
+}
+
+.metric-tile-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.metric-tile-icon.is-green { background-color: var(--color-primary-light); color: var(--color-primary); }
+.metric-tile-icon.is-amber { background-color: var(--risk-moderate-bg); color: var(--risk-moderate-fg); }
+.metric-tile-icon.is-orange { background-color: var(--risk-high-bg); color: var(--risk-high-fg); }
+.metric-tile-icon.is-blue { background-color: var(--color-secondary-light); color: var(--color-secondary); }
+
+.metric-tile-value {
+  font-family: var(--font-numeric);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-neutral);
+  line-height: 2.25rem;
+}
+
+.metric-tile-footer {
+  font-size: 0.75rem;
+  color: var(--color-neutral-muted);
+  margin-top: var(--space-xs);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ==========================================================================
+   2-COLUMN & 3-COLUMN OPERATIONAL WORKSPACES
+   ========================================================================== */
+.view-grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-xl);
+}
+
+.view-grid-3col {
+  display: grid;
+  grid-template-columns: 280px 1fr 340px;
+  gap: var(--space-lg);
+}
+
+.view-sidebar-pane {
+  background-color: var(--surface-card);
+  border: 1px solid var(--border-structural);
+  border-radius: var(--radius-md);
+  padding: var(--space-base);
+  height: fit-content;
+}
+
+/* ==========================================================================
+   PATIENT REGISTRATION & CLINICAL ENTRY WIZARD
+   ========================================================================== */
+.form-step-wizard {
+  background-color: var(--surface-card);
+  border: 1px solid var(--border-structural);
+  border-radius: var(--radius-md);
+  box-shadow: var(--elevation-1);
+  overflow: hidden;
+}
+
+.wizard-header {
+  padding: var(--space-lg);
+  background-color: var(--surface-subtle);
+  border-bottom: 1px solid var(--border-structural);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.wizard-step-pills {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.wizard-pill {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  background-color: var(--surface-card);
+  border: 1px solid var(--border-structural);
+  color: var(--color-neutral-muted);
+}
+
+.wizard-pill.is-active {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #FFFFFF;
+}
+
+.wizard-body {
+  padding: var(--space-xl);
+}
+
+.wizard-footer {
+  padding: var(--space-base) var(--space-xl);
+  background-color: var(--surface-subtle);
+  border-top: 1px solid var(--border-structural);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Symptoms Tag Picker */
+.symptom-tag-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-base);
+}
+
+.symptom-tag-btn {
+  padding: 8px 14px;
+  border-radius: var(--radius-pill);
+  background-color: var(--surface-card);
+  border: 1.5px solid var(--border-structural);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-neutral);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.symptom-tag-btn:hover {
+  border-color: var(--color-primary);
+  background-color: var(--surface-subtle);
+}
+
+.symptom-tag-btn.is-selected {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #FFFFFF;
+  font-weight: 600;
+}
+
+/* Vitals Entry Grid with Visual Normal/Abnormal Tags */
+.vitals-input-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-base);
+  margin-top: var(--space-base);
+}
+
+.vital-input-card {
+  background-color: var(--surface-card);
+  border: 1.5px solid var(--border-structural);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  transition: border-color var(--transition-fast);
+}
+
+.vital-input-card:focus-within {
+  border-color: var(--color-primary);
+}
+
+.vital-input-card.is-abnormal {
+  border-color: var(--risk-high-fg);
+  background-color: #FFFBF7;
+}
+
+.vital-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.vital-status-tag {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+}
+
+.vital-status-tag.normal {
+  background-color: var(--risk-low-bg);
+  color: var(--risk-low-fg);
+}
+
+.vital-status-tag.high {
+  background-color: var(--risk-high-bg);
+  color: var(--risk-high-fg);
+}
+
+/* ==========================================================================
+   FACILITY FINDER CARDS & CAPABILITY MATRICES
+   ========================================================================== */
+.facility-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-base);
+}
+
+.facility-status-pill {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+}
+
+.facility-status-pill.available {
+  background-color: var(--risk-low-bg);
+  color: var(--risk-low-fg);
+}
+
+.facility-status-pill.busy {
+  background-color: var(--risk-moderate-bg);
+  color: var(--risk-moderate-fg);
+}
+
+/* ==========================================================================
+   DOCTOR TELE-TRIAGE & CONSULTATION PANE
+   ========================================================================== */
+.doctor-consult-layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: var(--space-xl);
+}
+
+.patient-queue-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+}
+
+.queue-patient-item {
+  background-color: var(--surface-card);
+  border: 1.5px solid var(--border-structural);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.queue-patient-item:hover {
+  border-color: var(--border-emphasis);
+  background-color: var(--surface-subtle);
+}
+
+.queue-patient-item.is-selected {
+  border-color: var(--color-secondary);
+  background-color: #F3F8FB;
+  box-shadow: 0 0 0 2px var(--color-secondary-container);
+}
+
+/* Tele-consultation Action Box */
+.clinical-notes-box {
+  background-color: var(--surface-card);
+  border: 1px solid var(--border-structural);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  box-shadow: var(--elevation-1);
+}
+
+/* ==========================================================================
+   RESPONSIVE ADJUSTMENTS
+   ========================================================================== */
+@media (max-width: 900px) {
+  .view-grid-2col, .doctor-consult-layout {
+    grid-template-columns: 1fr;
+    gap: var(--space-base);
+  }
+  .view-grid-3col {
+    grid-template-columns: 1fr;
+  }
+}
