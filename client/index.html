@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SwasthyaSetu - Rural Healthcare Continuity Platform</title>
   <meta name="description" content="Offline-first rural healthcare continuity platform connecting frontline ASHA workers, doctors, and public health facilities across India.">
-  <link rel="icon" type="image/svg+xml" href="assets/emblem.svg">
+  <link rel="icon" type="image/svg+xml" href="src/assets/emblem.svg">
 
   <!-- Design System CSS Foundations -->
-  <link rel="stylesheet" href="css/tokens.css">
-  <link rel="stylesheet" href="css/base.css">
-  <link rel="stylesheet" href="css/components.css">
-  <link rel="stylesheet" href="css/layout.css">
-  <link rel="stylesheet" href="css/views.css">
+  <link rel="stylesheet" href="src/styles/tokens.css">
+  <link rel="stylesheet" href="src/styles/base.css">
+  <link rel="stylesheet" href="src/styles/components.css">
+  <link rel="stylesheet" href="src/styles/layout.css">
+  <link rel="stylesheet" href="src/styles/views.css">
 </head>
 <body>
   <div class="app-container">
@@ -20,7 +20,7 @@
     <header class="app-header">
       <div class="flex items-center gap-md">
         <a href="index.html" class="header-brand">
-          <img src="assets/emblem.svg" alt="SwasthyaSetu Emblem" class="brand-emblem">
+          <img src="src/assets/emblem.svg" alt="SwasthyaSetu Emblem" class="brand-emblem">
           <div class="brand-title-group">
             <span class="brand-title" data-i18n="app_title">SwasthyaSetu</span>
             <span class="brand-subtitle" data-i18n="app_subtitle">Rural Healthcare Continuity Network</span>
@@ -142,10 +142,10 @@
   </div>
 
   <!-- Application Logic Modules -->
-  <script src="js/mock-data.js"></script>
-  <script src="js/i18n.js"></script>
-  <script src="js/offline-store.js"></script>
-  <script src="js/triage-engine.js"></script>
-  <script src="js/app.js"></script>
+  <script src="src/data/mock-data.js"></script>
+  <script src="src/i18n/i18n.js"></script>
+  <script src="src/services/offline/offline-store.js"></script>
+  <script src="src/services/triage/triage-engine.js"></script>
+  <script src="src/app.js"></script>
 </body>
 </html>
