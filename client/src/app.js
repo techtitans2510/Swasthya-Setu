@@ -1,18 +1,26 @@
 /**
  * SwasthyaSetu Application Core Controller
- * Handles Multi-Role Workflows (ASHA, Doctor, Admin, Patient/Citizen),
- * 1-Click SIH Demo Journey, ABDM Citizen Portal, and Dynamic Views
+ * Orchestrates 4 Separate Roles: Patient (Citizen), ASHA Worker, Doctor (MO), Health Admin
  * Design Source of Truth: Stitch Project 11062066934146902009
  */
 
 class SwasthyaApp {
   constructor() {
-    this.currentRole = localStorage.getItem("swasthya_role") || "ASHA";
-    this.currentView = "dashboard";
+    this.currentRole = localStorage.getItem("swasthya_role") || "PATIENT";
+    this.currentView = this.currentRole === "PATIENT" ? "home" : "dashboard";
+    
+    // In-memory application state
     this.activePatient = JSON.parse(JSON.stringify(SWASTHYA_DATA.demoPatient));
-    this.selectedFacility = SWASTHYA_DATA.facilities[0];
-    this.registeredPatients = [...SWASTHYA_DATA.recentPatients];
     this.citizenData = JSON.parse(JSON.stringify(SWASTHYA_DATA.citizenUser));
+    this.registeredPatients = [...SWASTHYA_DATA.recentPatients];
+    this.selectedFacility = SWASTHYA_DATA.facilities[0];
+    this.selectedDoctor = SWASTHYA_DATA.doctors[0];
+    this.activeDoctorPatient = SWASTHYA_DATA.doctorQueue[0];
+    this.activeDoctorCategory = "all";
+    this.doctorSearchQuery = "";
+    this.consultMode = "In-Person";
+    this.selectedDate = "Tomorrow, 21 Sep 2026";
+    this.selectedTime = "10:30 AM";
     this.wizardStep = 1;
 
     this.init();
@@ -21,12 +29,13 @@ class SwasthyaApp {
   init() {
     this.bindEvents();
     this.setRole(this.currentRole);
-    this.renderCurrentView();
 
     // Init offline listener
-    window.offlineStore.onStatusChange(state => {
-      // Handled in offline store
-    });
+    if (window.offlineStore) {
+      window.offlineStore.onStatusChange(state => {
+        // Handled in offline store
+      });
+    }
 
     // Language listener
     if (window.i18n) {
@@ -35,7 +44,7 @@ class SwasthyaApp {
   }
 
   bindEvents() {
-    // Role switcher in header (ASHA, DOCTOR, ADMIN, PATIENT)
+    // Role switcher in header
     document.querySelectorAll(".role-btn").forEach(btn => {
       btn.addEventListener("click", e => {
         const role = e.currentTarget.getAttribute("data-role");
@@ -47,7 +56,9 @@ class SwasthyaApp {
     const langSelect = document.getElementById("langSelector");
     if (langSelect) {
       langSelect.addEventListener("change", e => {
-        window.i18n.setLanguage(e.target.value);
+        if (window.i18n) {
+          window.i18n.setLanguage(e.target.value);
+        }
         this.renderCurrentView();
       });
     }
@@ -57,14 +68,18 @@ class SwasthyaApp {
     const btnOffline = document.getElementById("btnModeOffline");
     if (btnOnline) {
       btnOnline.addEventListener("click", () => {
-        window.offlineStore.setOnlineStatus(true);
-        this.showToast("Connected to State Public Health Grid (Cloud Active)", "info");
+        if (window.offlineStore) {
+          window.offlineStore.setOnlineStatus(true);
+          this.showToast("Connected to State Public Health Grid (Cloud Active)", "info");
+        }
       });
     }
     if (btnOffline) {
       btnOffline.addEventListener("click", () => {
-        window.offlineStore.setOnlineStatus(false);
-        this.showToast("Switched to Offline Field Mode (Encrypted Local Storage)", "warning");
+        if (window.offlineStore) {
+          window.offlineStore.setOnlineStatus(false);
+          this.showToast("Switched to Offline Field Mode (Encrypted Local Storage)", "warning");
+        }
       });
     }
 
@@ -72,85 +87,66 @@ class SwasthyaApp {
     const headerSyncBtn = document.getElementById("headerSyncBtn");
     if (headerSyncBtn) {
       headerSyncBtn.addEventListener("click", () => {
-        window.offlineStore.triggerSync(count => {
-          this.showToast(`Cloud Sync Complete • ${count} record(s) synchronized with State Health Portal`, "success");
-        });
+        if (window.offlineStore) {
+          window.offlineStore.triggerSync(count => {
+            this.showToast(`Cloud Sync Complete • ${count} record(s) synchronized with State Health Portal`, "success");
+          });
+        }
       });
     }
 
-    // Sync Now in ribbon
+    // Ribbon Sync Button
     const syncRibbonBtn = document.getElementById("ribbonSyncBtn");
     if (syncRibbonBtn) {
       syncRibbonBtn.addEventListener("click", () => {
-        window.offlineStore.triggerSync(count => {
-          this.showToast(`Successfully synced ${count} offline records with State Health Cloud!`, "success");
-        });
-      });
-    }
-
-    // Navigation items
-    document.querySelectorAll(".nav-item, .mobile-nav-link").forEach(item => {
-      item.addEventListener("click", e => {
-        e.preventDefault();
-        const view = e.currentTarget.getAttribute("data-view");
-        if (view) {
-          this.navigateTo(view);
+        if (window.offlineStore) {
+          window.offlineStore.triggerSync(count => {
+            this.showToast(`Successfully synced ${count} offline records with State Health Cloud!`, "success");
+          });
         }
       });
-    });
+    }
   }
 
   setRole(role) {
     this.currentRole = role;
     localStorage.setItem("swasthya_role", role);
 
-    // Update active role buttons
+    // Update active role buttons in header
     document.querySelectorAll(".role-btn").forEach(btn => {
       btn.classList.toggle("is-active", btn.getAttribute("data-role") === role);
     });
 
     // Update user display in sidebar
+    const profile = SWASTHYA_DATA.roles[role] || SWASTHYA_DATA.roles.PATIENT;
     const userRoleEl = document.getElementById("currentUserRole");
     const userNameEl = document.getElementById("currentUserName");
     const userAvatarEl = document.getElementById("currentUserAvatar");
     const userBadgeEl = document.getElementById("currentUserBadge");
 
-    if (role === "ASHA") {
-      if (userNameEl) userNameEl.textContent = "Sunita More";
-      if (userRoleEl) userRoleEl.textContent = "ASHA Frontline Activist";
-      if (userAvatarEl) userAvatarEl.textContent = "SM";
-      if (userBadgeEl) {
-        userBadgeEl.className = "badge-role badge-role-asha";
-        userBadgeEl.textContent = "ASHA";
-      }
-    } else if (role === "DOCTOR") {
-      if (userNameEl) userNameEl.textContent = "Dr. A. Kulkarni";
-      if (userRoleEl) userRoleEl.textContent = "Medical Officer (Shirur 24x7 PHC)";
-      if (userAvatarEl) userAvatarEl.textContent = "AK";
-      if (userBadgeEl) {
-        userBadgeEl.className = "badge-role badge-role-doctor";
-        userBadgeEl.textContent = "Doctor (MO)";
-      }
-    } else if (role === "ADMIN") {
-      if (userNameEl) userNameEl.textContent = "Dr. S. K. Patil";
-      if (userRoleEl) userRoleEl.textContent = "District Health Officer (Pune Grid)";
-      if (userAvatarEl) userAvatarEl.textContent = "SP";
-      if (userBadgeEl) {
-        userBadgeEl.className = "badge-role badge-role-admin";
-        userBadgeEl.textContent = "Admin";
-      }
-    } else if (role === "PATIENT") {
-      if (userNameEl) userNameEl.textContent = "Ramesh Patil";
-      if (userRoleEl) userRoleEl.textContent = "Citizen / ABHA Beneficiary";
-      if (userAvatarEl) userAvatarEl.textContent = "RP";
-      if (userBadgeEl) {
-        userBadgeEl.className = "badge-role badge-role-patient";
-        userBadgeEl.textContent = "Citizen";
-      }
+    if (userNameEl) userNameEl.textContent = profile.name;
+    if (userRoleEl) userRoleEl.textContent = profile.roleTitle;
+    if (userAvatarEl) userAvatarEl.textContent = profile.avatar;
+    if (userBadgeEl) {
+      userBadgeEl.className = `badge-role ${profile.badgeClass || 'badge-role-patient'}`;
+      userBadgeEl.textContent = profile.badgeText || role;
     }
 
+    // Update dynamic navigation for desktop & mobile
     this.updateSidebarNavForRole(role);
-    this.navigateTo("dashboard");
+    this.updateMobileBottomNavForRole(role);
+    this.updateSidebarFooterForRole(role);
+
+    // Default starting view per role
+    if (role === "AUTH") {
+      this.navigateTo("login");
+    } else if (role === "PATIENT") {
+      this.navigateTo("home");
+    } else if (role === "DOCTOR") {
+      this.navigateTo("consultations");
+    } else {
+      this.navigateTo("dashboard");
+    }
   }
 
   updateSidebarNavForRole(role) {
@@ -158,94 +154,152 @@ class SwasthyaApp {
     if (!navContainer) return;
 
     let navHtml = "";
-    if (role === "ASHA") {
+    if (role === "AUTH") {
+      navHtml = `
+        <a href="#" class="nav-item is-active" data-view="login">
+          <span class="material-symbols-outlined nav-item-icon">lock_person</span>
+          <span>Unified Login Hub</span>
+        </a>
+        <a href="#" class="nav-item" onclick="app.selectCadre('PATIENT', '91-4029-1823-0192'); return false;">
+          <span class="material-symbols-outlined nav-item-icon">person</span>
+          <span>Citizen (ABHA)</span>
+        </a>
+        <a href="#" class="nav-item" onclick="app.selectCadre('ASHA', 'ASHA-2409'); return false;">
+          <span class="material-symbols-outlined nav-item-icon">diversity_1</span>
+          <span>ASHA Frontline</span>
+        </a>
+        <a href="#" class="nav-item" onclick="app.selectCadre('DOCTOR', 'MMC-2012-08-2940'); return false;">
+          <span class="material-symbols-outlined nav-item-icon">stethoscope</span>
+          <span>Doctor (MO)</span>
+        </a>
+        <a href="#" class="nav-item" onclick="app.selectCadre('ADMIN', 'admin.mohfw@gov.in'); return false;">
+          <span class="material-symbols-outlined nav-item-icon">shield_person</span>
+          <span>Health Admin</span>
+        </a>
+      `;
+    } else if (role === "PATIENT") {
+      navHtml = `
+        <a href="#" class="nav-item is-active" data-view="home">
+          <span class="material-symbols-outlined nav-item-icon">home</span>
+          <span data-i18n="nav_home">Home</span>
+        </a>
+        <a href="#" class="nav-item" data-view="find-doctor">
+          <span class="material-symbols-outlined nav-item-icon">person_search</span>
+          <span data-i18n="nav_find_doctor">Find Doctor</span>
+        </a>
+        <a href="#" class="nav-item" data-view="appointments">
+          <span class="material-symbols-outlined nav-item-icon">event_available</span>
+          <span data-i18n="nav_appointments">Appointments</span>
+          <span class="nav-badge-count">2</span>
+        </a>
+        <a href="#" class="nav-item" data-view="prescriptions">
+          <span class="material-symbols-outlined nav-item-icon">medication</span>
+          <span data-i18n="nav_prescriptions">Prescriptions</span>
+          <span class="nav-badge-count">4</span>
+        </a>
+        <a href="#" class="nav-item" data-view="medical-records">
+          <span class="material-symbols-outlined nav-item-icon">description</span>
+          <span data-i18n="nav_medical_records">Medical Records</span>
+        </a>
+        <a href="#" class="nav-item" data-view="notifications">
+          <span class="material-symbols-outlined nav-item-icon">notifications</span>
+          <span>Notifications</span>
+          <span class="nav-badge-count" style="background:#EF4444; color:#FFFFFF;">2</span>
+        </a>
+        <a href="#" class="nav-item" data-view="profile">
+          <span class="material-symbols-outlined nav-item-icon">badge</span>
+          <span data-i18n="nav_profile_abha">Profile & ABHA</span>
+        </a>
+      `;
+    } else if (role === "ASHA") {
       navHtml = `
         <a href="#" class="nav-item is-active" data-view="dashboard">
           <span class="material-symbols-outlined nav-item-icon">grid_view</span>
           <span data-i18n="nav_dashboard">Dashboard</span>
         </a>
-        <a href="#" class="nav-item" data-view="registration">
-          <span class="material-symbols-outlined nav-item-icon">person_add</span>
-          <span data-i18n="dash_quick_register">Register Patient</span>
-        </a>
-        <a href="#" class="nav-item" data-view="triage">
-          <span class="material-symbols-outlined nav-item-icon">vital_signs</span>
-          <span data-i18n="nav_triage">Triage & Vitals</span>
-        </a>
         <a href="#" class="nav-item" data-view="patients">
           <span class="material-symbols-outlined nav-item-icon">groups</span>
-          <span data-i18n="nav_patients">Village Patients</span>
-          <span class="nav-badge-count">28</span>
+          <span data-i18n="nav_patients">My Patients</span>
+          <span class="nav-badge-count">${this.registeredPatients.length}</span>
+        </a>
+        <a href="#" class="nav-item" data-view="registration">
+          <span class="material-symbols-outlined nav-item-icon">how_to_reg</span>
+          <span data-i18n="dash_quick_register">Register Patient</span>
+        </a>
+        <a href="#" class="nav-item" data-view="referrals">
+          <span class="material-symbols-outlined nav-item-icon">sync_alt</span>
+          <span>Referrals</span>
+          <span class="nav-badge-count" style="background:var(--color-secondary); color:#FFFFFF;">4</span>
+        </a>
+        <a href="#" class="nav-item" data-view="followups">
+          <span class="material-symbols-outlined nav-item-icon">assignment_turned_in</span>
+          <span>Follow-ups</span>
+          <span class="nav-badge-count" style="background:var(--risk-emergency-bg); color:var(--risk-emergency-fg);">6</span>
         </a>
         <a href="#" class="nav-item" data-view="facilities">
           <span class="material-symbols-outlined nav-item-icon">local_hospital</span>
-          <span data-i18n="nav_facilities">Facility Finder</span>
+          <span data-i18n="nav_facilities">Facilities</span>
         </a>
-        <a href="#" class="nav-item" data-view="referrals">
-          <span class="material-symbols-outlined nav-item-icon">transfer_within_a_station</span>
-          <span data-i18n="nav_referrals">Active Referrals</span>
+        <a href="#" class="nav-item" data-view="tasks">
+          <span class="material-symbols-outlined nav-item-icon">checklist</span>
+          <span data-i18n="nav_tasks">Tasks</span>
           <span class="nav-badge-count" style="background:var(--risk-high-bg); color:var(--risk-high-fg);">3</span>
         </a>
-        <a href="#" class="nav-item" data-view="timeline">
-          <span class="material-symbols-outlined nav-item-icon">route</span>
-          <span data-i18n="nav_records">Health Timeline</span>
+        <a href="#" class="nav-item" data-view="notifications">
+          <span class="material-symbols-outlined nav-item-icon">notifications</span>
+          <span>Notifications</span>
+          <span class="nav-badge-count" style="background:#EF4444; color:#FFFFFF;">3</span>
+        </a>
+        <a href="#" class="nav-item" data-view="profile">
+          <span class="material-symbols-outlined nav-item-icon">badge</span>
+          <span>Profile</span>
         </a>
       `;
     } else if (role === "DOCTOR") {
       navHtml = `
-        <a href="#" class="nav-item is-active" data-view="dashboard">
+        <a href="#" class="nav-item is-active" data-view="consultations">
           <span class="material-symbols-outlined nav-item-icon">stethoscope</span>
           <span data-i18n="nav_consultations">Clinical Station</span>
           <span class="nav-badge-count" style="background:var(--risk-emergency-bg); color:var(--risk-emergency-fg);">2 Urgent</span>
         </a>
-        <a href="#" class="nav-item" data-view="referrals">
-          <span class="material-symbols-outlined nav-item-icon">forward_to_inbox</span>
-          <span data-i18n="nav_referrals">Referral Inbox</span>
+        <a href="#" class="nav-item" data-view="appointments">
+          <span class="material-symbols-outlined nav-item-icon">event_available</span>
+          <span data-i18n="nav_opd_schedule">OPD Schedule</span>
         </a>
-        <a href="#" class="nav-item" data-view="timeline">
+        <a href="#" class="nav-item" data-view="patients">
           <span class="material-symbols-outlined nav-item-icon">clinical_notes</span>
-          <span>ABHA Longitudinal Record</span>
+          <span data-i18n="nav_medical_records">Patient Records</span>
+        </a>
+        <a href="#" class="nav-item" data-view="availability">
+          <span class="material-symbols-outlined nav-item-icon">event_seat</span>
+          <span data-i18n="nav_availability">Duty & Availability</span>
         </a>
       `;
     } else if (role === "ADMIN") {
       navHtml = `
         <a href="#" class="nav-item is-active" data-view="dashboard">
           <span class="material-symbols-outlined nav-item-icon">analytics</span>
-          <span data-i18n="nav_analytics">District Overview</span>
+          <span data-i18n="nav_district_overview">District Overview</span>
+        </a>
+        <a href="#" class="nav-item" data-view="doctor-verification">
+          <span class="material-symbols-outlined nav-item-icon">verified_user</span>
+          <span data-i18n="nav_doctor_verification">Doctor Verification</span>
+          <span class="nav-badge-count" style="background:var(--risk-moderate-bg); color:var(--risk-moderate-fg);">2</span>
+        </a>
+        <a href="#" class="nav-item" data-view="asha-management">
+          <span class="material-symbols-outlined nav-item-icon">groups</span>
+          <span data-i18n="nav_asha_management">ASHA Management</span>
         </a>
         <a href="#" class="nav-item" data-view="facilities">
           <span class="material-symbols-outlined nav-item-icon">local_hospital</span>
-          <span>Facility Capacity</span>
-        </a>
-        <a href="#" class="nav-item" data-view="referrals">
-          <span class="material-symbols-outlined nav-item-icon">swap_horiz</span>
-          <span>Transfer Logistics</span>
-        </a>
-      `;
-    } else if (role === "PATIENT") {
-      navHtml = `
-        <a href="#" class="nav-item is-active" data-view="dashboard">
-          <span class="material-symbols-outlined nav-item-icon">home_health</span>
-          <span data-i18n="nav_my_health">My Health Home</span>
-        </a>
-        <a href="#" class="nav-item" data-view="timeline">
-          <span class="material-symbols-outlined nav-item-icon">clinical_notes</span>
-          <span data-i18n="nav_records">Health Records</span>
-        </a>
-        <a href="#" class="nav-item" data-view="facilities">
-          <span class="material-symbols-outlined nav-item-icon">local_hospital</span>
-          <span data-i18n="nav_facilities">Facility Finder</span>
-        </a>
-        <a href="#" class="nav-item" data-view="referrals">
-          <span class="material-symbols-outlined nav-item-icon">transfer_within_a_station</span>
-          <span data-i18n="nav_referrals">Referral Tracking</span>
+          <span data-i18n="nav_facility_capacity">Facility Capacity</span>
         </a>
       `;
     }
 
     navContainer.innerHTML = navHtml;
 
-    // Rebind nav items
+    // Bind click events on sidebar items
     navContainer.querySelectorAll(".nav-item").forEach(item => {
       item.addEventListener("click", e => {
         e.preventDefault();
@@ -253,6 +307,160 @@ class SwasthyaApp {
         if (view) this.navigateTo(view);
       });
     });
+  }
+
+  updateMobileBottomNavForRole(role) {
+    const bottomNav = document.getElementById("mobileBottomNav");
+    if (!bottomNav) return;
+
+    let mobileHtml = "";
+    if (role === "AUTH") {
+      mobileHtml = `
+        <a href="#" class="mobile-nav-link is-active" data-view="login">
+          <span class="material-symbols-outlined mobile-nav-icon">lock_person</span>
+          <span>Login</span>
+        </a>
+        <a href="#" class="mobile-nav-link" onclick="app.selectCadre('PATIENT', '91-4029-1823-0192'); return false;">
+          <span class="material-symbols-outlined mobile-nav-icon">person</span>
+          <span>Citizen</span>
+        </a>
+        <a href="#" class="mobile-nav-link" onclick="app.selectCadre('ASHA', 'ASHA-2409'); return false;">
+          <span class="material-symbols-outlined mobile-nav-icon">diversity_1</span>
+          <span>ASHA</span>
+        </a>
+        <a href="#" class="mobile-nav-link" onclick="app.selectCadre('DOCTOR', 'MMC-2012-08-2940'); return false;">
+          <span class="material-symbols-outlined mobile-nav-icon">stethoscope</span>
+          <span>Doctor</span>
+        </a>
+      `;
+    } else if (role === "PATIENT") {
+      mobileHtml = `
+        <a href="#" class="mobile-nav-link is-active" data-view="home">
+          <span class="material-symbols-outlined mobile-nav-icon">home</span>
+          <span>Home</span>
+        </a>
+        <a href="#" class="mobile-nav-link" data-view="find-doctor">
+          <span class="material-symbols-outlined mobile-nav-icon">search</span>
+          <span>Find Doctor</span>
+        </a>
+        <a href="#" class="mobile-nav-link" data-view="appointments">
+          <span class="material-symbols-outlined mobile-nav-icon">event</span>
+          <span>Visits</span>
+        </a>
+        <a href="#" class="mobile-nav-link" data-view="prescriptions">
+          <span class="material-symbols-outlined mobile-nav-icon">medication</span>
+          <span>Medicines</span>
+        </a>
+      `;
+    } else if (role === "ASHA") {
+      mobileHtml = `
+        <a href="#" class="mobile-nav-link is-active" data-view="dashboard">
+          <span class="material-symbols-outlined mobile-nav-icon">grid_view</span>
+          <span>Home</span>
+        </a>
+        <a href="#" class="mobile-nav-link" data-view="patients">
+          <span class="material-symbols-outlined mobile-nav-icon">groups</span>
+          <span>Patients</span>
+        </a>
+        <a href="#" class="mobile-nav-link" data-view="registration">
+          <span class="material-symbols-outlined mobile-nav-icon">person_add</span>
+          <span>Register</span>
+        </a>
+        <a href="#" class="mobile-nav-link" data-view="referrals">
+          <span class="material-symbols-outlined mobile-nav-icon">sync_alt</span>
+          <span>Referrals</span>
+        </a>
+        <a href="#" class="mobile-nav-link" data-view="followups">
+          <span class="material-symbols-outlined mobile-nav-icon">assignment_turned_in</span>
+          <span>Follow-ups</span>
+        </a>
+      `;
+    } else if (role === "DOCTOR") {
+      mobileHtml = `
+        <a href="#" class="mobile-nav-link is-active" data-view="consultations">
+          <span class="material-symbols-outlined mobile-nav-icon">stethoscope</span>
+          <span>Station</span>
+        </a>
+        <a href="#" class="mobile-nav-link" data-view="appointments">
+          <span class="material-symbols-outlined mobile-nav-icon">event_available</span>
+          <span>OPD</span>
+        </a>
+        <a href="#" class="mobile-nav-link" data-view="patients">
+          <span class="material-symbols-outlined mobile-nav-icon">clinical_notes</span>
+          <span>Records</span>
+        </a>
+        <a href="#" class="mobile-nav-link" data-view="availability">
+          <span class="material-symbols-outlined mobile-nav-icon">event_seat</span>
+          <span>Duty</span>
+        </a>
+      `;
+    } else if (role === "ADMIN") {
+      mobileHtml = `
+        <a href="#" class="mobile-nav-link is-active" data-view="dashboard">
+          <span class="material-symbols-outlined mobile-nav-icon">analytics</span>
+          <span>Overview</span>
+        </a>
+        <a href="#" class="mobile-nav-link" data-view="doctor-verification">
+          <span class="material-symbols-outlined mobile-nav-icon">verified_user</span>
+          <span>Verify</span>
+        </a>
+        <a href="#" class="mobile-nav-link" data-view="asha-management">
+          <span class="material-symbols-outlined mobile-nav-icon">groups</span>
+          <span>ASHAs</span>
+        </a>
+        <a href="#" class="mobile-nav-link" data-view="facilities">
+          <span class="material-symbols-outlined mobile-nav-icon">local_hospital</span>
+          <span>Beds</span>
+        </a>
+      `;
+    }
+
+    bottomNav.innerHTML = mobileHtml;
+
+    bottomNav.querySelectorAll(".mobile-nav-link").forEach(link => {
+      link.addEventListener("click", e => {
+        e.preventDefault();
+        const view = e.currentTarget.getAttribute("data-view");
+        if (view) this.navigateTo(view);
+      });
+    });
+  }
+
+  updateSidebarFooterForRole(role) {
+    const footerEl = document.getElementById("sidebarOrgFooter");
+    if (!footerEl) return;
+
+    if (role === "AUTH") {
+      footerEl.innerHTML = `
+        <strong>ABDM Gateway Node #2841</strong><br>
+        MoHFW Institutional Portal<br>
+        <span style="color:var(--color-primary); font-weight:600;">Secure 2FA / Iris Auth</span>
+      `;
+    } else if (role === "PATIENT") {
+      footerEl.innerHTML = `
+        <strong>Village: Talwade (Sector 4)</strong><br>
+        Block: Shirur • Dist: Pune<br>
+        <span style="color:var(--color-primary); font-weight:600;">ABHA ID: 91-4029-1823-0192</span>
+      `;
+    } else if (role === "ASHA") {
+      footerEl.innerHTML = `
+        <strong>Sub-Centre Ambegaon</strong><br>
+        Block: Shirur / Junnar • Dist: Pune<br>
+        <span style="color:var(--color-primary); font-weight:600;">ASHA Cadre: #2409 • NHM</span>
+      `;
+    } else if (role === "DOCTOR") {
+      footerEl.innerHTML = `
+        <strong>Shirur 24x7 Primary Health Centre</strong><br>
+        Room #4 Consultation Desk<br>
+        <span style="color:var(--color-secondary); font-weight:600;">Dr. A. Kulkarni (MMC-2012-08-2940)</span>
+      `;
+    } else if (role === "ADMIN") {
+      footerEl.innerHTML = `
+        <strong>District Public Health Office</strong><br>
+        Pune Zilla Parishad Grid<br>
+        <span style="color:var(--color-primary); font-weight:600;">Surveillance Directorate</span>
+      `;
+    }
   }
 
   navigateTo(viewName) {
@@ -264,61 +472,131 @@ class SwasthyaApp {
     });
 
     this.renderCurrentView();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (typeof window.scrollTo === 'function') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   }
 
   renderCurrentView() {
     const mainContainer = document.getElementById("mainContent");
     if (!mainContainer) return;
 
+    if (this.currentRole === "AUTH" || this.currentView === "login") {
+      mainContainer.innerHTML = AuthPages.renderLogin(this);
+      this.initAuthPage();
+      if (window.i18n) window.i18n.updateDOM();
+      return;
+    }
+
     if (this.currentRole === "PATIENT") {
-      if (this.currentView === "dashboard") {
-        mainContainer.innerHTML = this.renderPatientPortal();
-        this.bindPatientPortalEvents();
-      } else if (this.currentView === "timeline") {
-        mainContainer.innerHTML = this.renderTimelineView();
-      } else if (this.currentView === "facilities") {
-        mainContainer.innerHTML = this.renderFacilitiesView();
-        this.bindFacilityEvents();
-      } else if (this.currentView === "referrals") {
-        mainContainer.innerHTML = this.renderReferralsView();
-      } else {
-        mainContainer.innerHTML = this.renderPatientPortal();
-        this.bindPatientPortalEvents();
+      switch (this.currentView) {
+        case "find-doctor":
+        case "doctors":
+          mainContainer.innerHTML = PatientPages.renderFindDoctor(this);
+          this.bindPatientFindDoctorEvents();
+          break;
+        case "appointments":
+          mainContainer.innerHTML = PatientPages.renderAppointments(this);
+          break;
+        case "prescriptions":
+          mainContainer.innerHTML = PatientPages.renderPrescriptions(this);
+          break;
+        case "medical-records":
+        case "records":
+        case "health-history":
+          mainContainer.innerHTML = PatientPages.renderMedicalRecords(this);
+          break;
+        case "notifications":
+          mainContainer.innerHTML = PatientPages.renderNotifications(this);
+          break;
+        case "profile":
+        case "profile-abha-card":
+          mainContainer.innerHTML = PatientPages.renderProfile(this);
+          break;
+        case "home":
+        case "dashboard":
+        default:
+          mainContainer.innerHTML = PatientPages.renderHome(this);
+          break;
       }
     } else if (this.currentRole === "DOCTOR") {
-      mainContainer.innerHTML = this.renderDoctorDashboard();
-      this.bindDoctorEvents();
-    } else if (this.currentRole === "ADMIN") {
-      mainContainer.innerHTML = this.renderAdminDashboard();
-    } else {
-      // ASHA Workflows
       switch (this.currentView) {
-        case "registration":
-          mainContainer.innerHTML = this.renderRegistrationWizard();
-          this.bindWizardEvents();
+        case "appointments":
+          mainContainer.innerHTML = DoctorPages.renderAppointments(this);
           break;
-        case "triage":
-          mainContainer.innerHTML = this.renderTriageView();
-          this.bindTriageEvents();
+        case "availability":
+          mainContainer.innerHTML = DoctorPages.renderAvailability(this);
+          break;
+        case "patients":
+          mainContainer.innerHTML = PatientPages.renderMedicalRecords(this);
+          break;
+        case "consultations":
+        default:
+          mainContainer.innerHTML = DoctorPages.renderClinicalStation(this);
+          break;
+      }
+    } else if (this.currentRole === "ADMIN") {
+      switch (this.currentView) {
+        case "doctor-verification":
+          mainContainer.innerHTML = AdminPages.renderDoctorVerification(this);
+          break;
+        case "asha-management":
+          mainContainer.innerHTML = AdminPages.renderAshaManagement(this);
           break;
         case "facilities":
           mainContainer.innerHTML = this.renderFacilitiesView();
           this.bindFacilityEvents();
           break;
-        case "referrals":
-          mainContainer.innerHTML = this.renderReferralsView();
+        case "dashboard":
+        default:
+          mainContainer.innerHTML = AdminPages.renderDashboard(this);
           break;
-        case "timeline":
-          mainContainer.innerHTML = this.renderTimelineView();
+      }
+    } else {
+      // ASHA Persona Views
+      switch (this.currentView) {
+        case "registration":
+        case "register-patient":
+          mainContainer.innerHTML = AshaPages.renderRegistrationWizard(this);
+          this.bindWizardEvents();
+          break;
+        case "triage":
+        case "triage-vitals":
+          mainContainer.innerHTML = AshaPages.renderTriage(this);
           break;
         case "patients":
-          mainContainer.innerHTML = this.renderPatientsListView();
+        case "my-patients":
+          mainContainer.innerHTML = AshaPages.renderPatientsList(this);
+          break;
+        case "referrals":
+        case "active-referrals":
+          mainContainer.innerHTML = AshaPages.renderReferrals(this);
+          break;
+        case "followups":
+        case "follow-ups":
+          mainContainer.innerHTML = AshaPages.renderFollowUps(this);
+          break;
+        case "facilities":
+        case "facility-finder":
+          mainContainer.innerHTML = AshaPages.renderFacilities(this);
+          this.bindFacilityEvents();
+          break;
+        case "tasks":
+        case "field-tasks":
+          mainContainer.innerHTML = AshaPages.renderTasks(this);
+          break;
+        case "notifications":
+          mainContainer.innerHTML = AshaPages.renderNotifications(this);
+          break;
+        case "profile":
+          mainContainer.innerHTML = AshaPages.renderProfile(this);
+          break;
+        case "timeline":
+          mainContainer.innerHTML = PatientPages.renderMedicalRecords(this);
           break;
         case "dashboard":
         default:
-          mainContainer.innerHTML = this.renderAshaDashboard();
-          this.bindDashboardEvents();
+          mainContainer.innerHTML = AshaPages.renderDashboard(this);
           break;
       }
     }
@@ -329,836 +607,1060 @@ class SwasthyaApp {
   }
 
   /* ==========================================================================
-     RENDERERS: ASHA DASHBOARD & 7-STAGE STEPPER (Stitch Screen 897d27b1)
+     PATIENT INTERACTIVE HANDLERS & MODALS
      ========================================================================== */
-  renderAshaDashboard() {
-    return `
-      <!-- TOP BANNERS CONTAINER: Offline Synchronization & SIH Active Demonstration Flow -->
-      <div style="display:flex; flex-direction:column; gap:var(--space-sm); margin-bottom:var(--space-lg);">
-        <!-- Offline Sync Banner -->
-        <div class="alert alert-warning" style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:var(--space-sm);">
-          <div class="flex items-center gap-sm">
-            <span class="material-symbols-outlined" style="font-size:24px; color:var(--sync-offline-fg);">wifi_off</span>
-            <div>
-              <strong style="color:var(--sync-offline-fg);">Local Offline Storage Active:</strong>
-              <span class="text-sm">2 vitals logs queued for sync. All records cached securely in device sandbox.</span>
-            </div>
+  bindPatientFindDoctorEvents() {
+    const searchInput = document.getElementById("doctorSearchInput");
+    if (searchInput) {
+      searchInput.addEventListener("keypress", e => {
+        if (e.key === "Enter") this.handleDoctorSearch();
+      });
+    }
+  }
+
+  handleDoctorSearchInput(query) {
+    this.doctorSearchQuery = (query || "").trim().toLowerCase();
+    this.renderCurrentView();
+  }
+
+  setDoctorCategory(cat) {
+    this.activeDoctorCategory = cat;
+    this.renderCurrentView();
+  }
+
+  handleDoctorSearch() {
+    const input = document.getElementById("doctorSearchInput");
+    if (input) {
+      this.doctorSearchQuery = input.value.trim().toLowerCase();
+    }
+    this.showToast(`Filtered doctors matching "${this.doctorSearchQuery || 'All'}"`, "info");
+    this.renderCurrentView();
+  }
+
+  selectDoctor(docId) {
+    const doc = SWASTHYA_DATA.doctors.find(d => d.id === docId);
+    if (doc) {
+      this.selectedDoctor = doc;
+      this.renderCurrentView();
+      const drawer = document.getElementById("bookingDrawer");
+      if (drawer) {
+        drawer.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  }
+
+  selectDoctorForBooking(docId) {
+    this.selectDoctor(docId);
+  }
+
+  setConsultMode(mode) {
+    this.consultMode = mode;
+    this.renderCurrentView();
+  }
+
+  setSelectedDate(date) {
+    this.selectedDate = date;
+    this.renderCurrentView();
+  }
+
+  setSelectedTime(time) {
+    this.selectedTime = time;
+    this.renderCurrentView();
+  }
+
+  setAppointmentTab(tab) {
+    this.activeAppointmentTab = tab;
+    this.renderCurrentView();
+  }
+
+  setRecordFilter(filter) {
+    this.activeRecordFilter = filter;
+    this.renderCurrentView();
+  }
+
+  markMedicineTaken(medicineId) {
+    const med = this.citizenData.prescriptions.find(p => p.id === medicineId);
+    if (med) {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      med.taken = true;
+      med.takenAt = timeStr;
+      med.status = `Taken at ${timeStr}`;
+
+      this.showToast(`Marked ${med.medicine} as taken at ${timeStr}!`, "success");
+      this.renderCurrentView();
+    }
+  }
+
+  markAllNotificationsRead() {
+    if (this.citizenData.notifications) {
+      this.citizenData.notifications.forEach(n => n.unread = false);
+      this.showToast("All notifications marked as read.", "info");
+      this.renderCurrentView();
+    }
+  }
+
+  bookDoctorAppointment() {
+    const doc = this.selectedDoctor || SWASTHYA_DATA.doctors[0];
+    const reasonInput = document.getElementById("consultReasonInput");
+    const reason = reasonInput ? reasonInput.value : "Follow-up consultation";
+
+    const tokenNumber = "TOKEN-SAS-" + Math.floor(10 + Math.random() * 90);
+    const newApt = {
+      id: "apt-" + Date.now(),
+      doctorName: doc.name,
+      specialty: doc.specialty,
+      degrees: doc.qualifications ? doc.qualifications.split(',')[0] : "MD",
+      facility: doc.facility,
+      date: this.selectedDate,
+      relativeDate: "Confirmed",
+      time: this.selectedTime,
+      mode: this.consultMode,
+      status: "Confirmed",
+      statusClass: "status-confirmed",
+      type: reason,
+      token: tokenNumber,
+      fee: "FREE (Ayushman Bharat / NHM)"
+    };
+
+    this.citizenData.upcomingAppointments.unshift(newApt);
+    if (window.offlineStore) {
+      window.offlineStore.saveRecord("patient_appointment", newApt);
+    }
+
+    this.openModal(
+      `<span class="material-symbols-outlined text-primary text-[22px]">check_circle</span> Appointment Confirmed!`,
+      `
+        <div class="text-center p-space-md">
+          <div class="w-16 h-16 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center mx-auto mb-md">
+            <span class="material-symbols-outlined text-[36px]">verified</span>
           </div>
-          <div class="flex items-center gap-xs">
-            <span class="text-xs text-muted font-bold uppercase hidden md:inline">SQLite Local DB</span>
-            <button class="btn btn-primary btn-sm" style="background:#92400E; border-color:#92400E;" id="syncNowAshaBtn" onclick="app.triggerSyncSimulation()">
-              <span class="material-symbols-outlined text-[16px]">sync</span>
-              <span>Sync Now</span>
-            </button>
+          <h3 class="font-headline-lg font-bold text-primary" style="font-size:1.25rem;">Token Issued: ${tokenNumber}</h3>
+          <p class="text-sm text-muted mt-xs">Your consultation has been registered under Ayushman Bharat Digital Mission (ABDM).</p>
+          
+          <div class="bg-surface-container-low p-space-md rounded-xl text-left mt-base flex flex-col gap-xs text-xs">
+            <div class="flex justify-between"><strong>Doctor:</strong> <span>${doc.name}</span></div>
+            <div class="flex justify-between"><strong>Specialty:</strong> <span>${doc.specialty}</span></div>
+            <div class="flex justify-between"><strong>Date & Time:</strong> <span>${this.selectedDate} at ${this.selectedTime}</span></div>
+            <div class="flex justify-between"><strong>Facility:</strong> <span>${doc.facility}</span></div>
+            <div class="flex justify-between"><strong>Fee:</strong> <span class="font-bold text-primary">FREE (NHM Covered)</span></div>
           </div>
         </div>
+      `,
+      `
+        <button class="btn btn-secondary btn-sm" onclick="app.closeModal(); app.openTokenSlipModal('${newApt.id}')">
+          <span class="material-symbols-outlined text-[16px]">download</span>
+          <span>Download Token Slip</span>
+        </button>
+        <button class="btn btn-primary btn-sm" onclick="app.closeModal(); app.navigateTo('appointments')">
+          <span>View My Appointments</span>
+        </button>
+      `
+    );
+  }
 
-        <!-- Active Demo Hero Journey Header -->
-        <div class="demo-hero-banner">
-          <div style="max-width:780px;">
-            <div class="flex items-center gap-xs" style="margin-bottom:var(--space-xs);">
-              <span class="demo-hero-pill">
-                <span class="material-symbols-outlined text-[14px]">bolt</span> SIH Demonstration Flow
-              </span>
-              <span class="text-xs" style="color:var(--color-primary-fixed-dim);">• Case ID: SH-2024-0982</span>
-            </div>
-            <h2 style="color:#FFFFFF; font-size:1.375rem; margin-bottom:4px;">
-              Patient: Ramesh Patil, 62 Y — High Risk Detected
-            </h2>
-            <p class="text-sm" style="color:var(--color-primary-fixed-dim); line-height:1.4;">
-              Follow uninterrupted continuum of care: ASHA Village Survey → Digital Triage & Vitals → Cluster PHC Shirur Referral → Medical Officer Tele-Triage → Continuity Log.
-            </p>
-          </div>
-          <button class="btn btn-secondary btn-sm font-bold" id="startDemoJourneyBtn" onclick="app.runDemoJourney()" style="background:var(--color-tertiary-light); color:var(--color-tertiary-container); border:none;">
-            <span class="material-symbols-outlined text-[18px]">explore</span>
-            <span>Inspect Active Journey</span>
-          </button>
-        </div>
-      </div>
+  cancelAppointment(aptId) {
+    const idx = this.citizenData.upcomingAppointments.findIndex(a => a.id === aptId);
+    if (idx > -1) {
+      const removed = this.citizenData.upcomingAppointments.splice(idx, 1)[0];
+      removed.status = "Cancelled";
+      removed.reason = "Cancelled by citizen via health portal";
+      if (!this.citizenData.cancelledAppointments) this.citizenData.cancelledAppointments = [];
+      this.citizenData.cancelledAppointments.unshift(removed);
 
-      <!-- SIGNATURE UX COMPONENT: THE 7-STAGE PATIENT JOURNEY STEPPER -->
-      <div class="card" style="margin-bottom:var(--space-xl);">
-        <div class="flex items-center justify-between" style="margin-bottom:var(--space-sm); padding-bottom:var(--space-xs); border-bottom:1px solid var(--surface-subtle);">
-          <div>
-            <div class="flex items-center gap-xs">
-              <span class="material-symbols-outlined text-primary text-[22px]">route</span>
-              <h3 class="card-title">Patient Journey Stepper</h3>
-            </div>
-            <p class="text-xs text-muted">End-to-End ABDM Integrated Continuum for Ramesh Patil (ABHA: 91-4029-1823-0192)</p>
-          </div>
-          <div class="flex items-center gap-xs">
-            <span class="badge-role badge-role-asha">Facility: Shirur 24x7 PHC</span>
-            <span class="risk-chip risk-high flex items-center gap-xs">
-              <span class="sync-dot-live"></span> Stage 4/7 Active
-            </span>
-          </div>
-        </div>
+      this.closeModal();
+      this.showToast(`Appointment with ${removed.doctorName} cancelled.`, "warning");
+      this.renderCurrentView();
+    }
+  }
 
-        <!-- Stepper Graphic Flow -->
-        ${this.renderJourneyStepper(4)}
-
-        <!-- Clinical Disclaimer & Guardrail Note -->
-        <div class="clinical-disclaimer" style="margin-top:var(--space-md);">
-          <span class="material-symbols-outlined text-primary text-[20px]">policy</span>
-          <div>
-            <strong style="color:var(--color-neutral);">Decision Support & Clinical Guardrail:</strong>
-            <span data-i18n="triage_disclaimer">
-              Algorithm calculates predictive severity indices based on frontline vitals (SpO2, Pulse, SBP). Definitive diagnostic confirmation is strictly authorized by registered PHC Medical Officers under MoHFW Indian Public Health Standards (IPHS).
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Operational Metrics Grid -->
-      <div class="metrics-grid">
-        <div class="metric-tile">
-          <div class="metric-tile-top">
-            <span class="metric-tile-label" data-i18n="dash_handled_today">Daily Census</span>
-            <div class="metric-tile-icon is-green">
-              <span class="material-symbols-outlined text-[18px]">groups</span>
-            </div>
-          </div>
-          <div class="flex items-baseline gap-xs">
-            <span class="metric-tile-value">14</span>
-            <span class="text-xs font-bold" style="background:var(--color-tertiary-light); color:var(--color-tertiary-container); padding:2px 6px; border-radius:12px;">+3 pending</span>
-          </div>
-          <div class="metric-tile-footer text-muted">Talwade Sector 4</div>
-        </div>
-
-        <div class="metric-tile">
-          <div class="metric-tile-top">
-            <span class="metric-tile-label" data-i18n="dash_high_risk">High Risk Cases</span>
-            <div class="metric-tile-icon is-orange">
-              <span class="material-symbols-outlined text-[18px]">warning</span>
-            </div>
-          </div>
-          <div class="flex items-baseline gap-xs">
-            <span class="metric-tile-value text-bold" style="color:var(--risk-high-fg);">3</span>
-            <span class="text-xs font-bold" style="background:var(--risk-emergency-bg); color:var(--risk-emergency-fg); padding:2px 6px; border-radius:12px;">Action Req.</span>
-          </div>
-          <div class="metric-tile-footer" style="color:var(--risk-high-fg);">1 Transport En Route</div>
-        </div>
-
-        <div class="metric-tile">
-          <div class="metric-tile-top">
-            <span class="metric-tile-label" data-i18n="dash_pending_referrals">Pending PHC Referrals</span>
-            <div class="metric-tile-icon is-blue">
-              <span class="material-symbols-outlined text-[18px]">transfer_within_a_station</span>
-            </div>
-          </div>
-          <div class="flex items-baseline gap-xs">
-            <span class="metric-tile-value">4</span>
-            <span class="text-xs font-bold" style="background:var(--color-secondary-light); color:var(--color-secondary); padding:2px 6px; border-radius:12px;">2 Accepted</span>
-          </div>
-          <div class="metric-tile-footer text-muted">2 En Route to Shirur</div>
-        </div>
-
-        <div class="metric-tile">
-          <div class="metric-tile-top">
-            <span class="metric-tile-label" data-i18n="dash_followups_due">Follow-ups Due</span>
-            <div class="metric-tile-icon is-amber">
-              <span class="material-symbols-outlined text-[18px]">event_repeat</span>
-            </div>
-          </div>
-          <div class="flex items-baseline gap-xs">
-            <span class="metric-tile-value">8</span>
-            <span class="text-xs font-bold" style="background:var(--color-primary-fixed); color:var(--color-primary); padding:2px 6px; border-radius:12px;">HTN & ANC</span>
-          </div>
-          <div class="metric-tile-footer text-muted">Next visit: Tomorrow</div>
-        </div>
-      </div>
-
-      <!-- Primary Quick Actions Bar -->
-      <div class="quick-action-strip">
-        <div class="flex items-center gap-xs">
-          <span class="material-symbols-outlined text-primary text-[20px]">touch_app</span>
-          <strong class="text-primary font-headline" style="font-size:1.0625rem;">Field Actions</strong>
-        </div>
-        <div class="flex flex-wrap items-center gap-sm">
-          <button class="btn btn-primary" id="quickRegisterBtn">
-            <span class="material-symbols-outlined text-[18px]">person_add</span>
-            <span data-i18n="dash_quick_register">+ Register New Patient</span>
-          </button>
-          <button class="btn btn-secondary" onclick="app.navigateTo('triage')">
-            <span class="material-symbols-outlined text-[18px] text-amber-600">vital_signs</span>
-            <span data-i18n="dash_record_vitals">Record Vitals & Triage</span>
-          </button>
-          <button class="btn btn-referral" onclick="app.navigateTo('facilities')">
-            <span class="material-symbols-outlined text-[18px]">local_hospital</span>
-            <span data-i18n="dash_facility_finder">Nearest Facility Finder</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Active Patient Priority Table & Live Facility Snapshot (Split Bento) -->
-      <div class="asha-split-bento">
-        <!-- Active Clinical Referrals Queue (8 Columns) -->
-        <div class="card" style="display:flex; flex-direction:column; justify-content:space-between;">
-          <div>
-            <div class="card-header">
-              <div>
-                <h3 class="card-title" data-i18n="dash_recent_patients">Active Referral & Triage Queue</h3>
-                <p class="text-xs text-muted">Live cluster queue verified with ABDM Health ID stack</p>
-              </div>
-              <span class="sync-status-pill is-online">● 3 Cases Monitored</span>
-            </div>
-
-            <div class="table-container">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>Patient / ABHA ID</th>
-                    <th>Village / Age</th>
-                    <th>Vitals Snapshot</th>
-                    <th>Risk Tier</th>
-                    <th>Transit Status</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${this.registeredPatients.map(p => `
-                    <tr>
-                      <td>
-                        <strong>${p.name}</strong><br>
-                        <span class="font-numeric text-xs text-muted flex items-center gap-xs">
-                          <span class="material-symbols-outlined text-[14px]">badge</span>${p.abhaId}
-                        </span>
-                      </td>
-                      <td>
-                        <strong>${p.village}</strong><br>
-                        <span class="text-xs text-muted">${p.age}y / ${p.gender}</span>
-                      </td>
-                      <td>
-                        <span class="text-xs font-bold ${p.riskLevel === 'HIGH' || p.riskLevel === 'EMERGENCY' ? 'text-danger' : ''}">
-                          SpO2: ${p.spo2} • BP: ${p.bp}
-                        </span>
-                      </td>
-                      <td>
-                        <span class="risk-chip ${p.riskClass}">${p.riskLevel}</span>
-                      </td>
-                      <td>
-                        <span class="text-xs font-bold text-primary">${p.status}</span>
-                      </td>
-                      <td>
-                        <button class="btn btn-secondary btn-sm" onclick="app.inspectPatient('${p.id}')">
-                          View File →
-                        </button>
-                      </td>
-                    </tr>
-                  `).join("")}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div style="margin-top:var(--space-md); padding-top:var(--space-sm); border-top:1px solid var(--surface-subtle); display:flex; align-items:center; justify-content:space-between;">
-            <span class="text-xs text-muted flex items-center gap-xs">
-              <span class="material-symbols-outlined text-[16px] text-primary">security</span> All records signed by ASHA Sunita Tai • Verified via Shirur PHC Gateway
-            </span>
-            <a href="#" onclick="app.navigateTo('patients')" class="text-xs text-primary font-bold">View Full Register (28 Patients) →</a>
-          </div>
-        </div>
-
-        <!-- Live Facility Capability & Ready Bed Snapshot (4 Columns) -->
-        <div style="display:flex; flex-direction:column; gap:var(--space-md);">
-          <!-- Live Facility Card -->
-          <div class="facility-live-card">
-            <div class="flex items-center justify-between">
-              <span class="badge-role badge-role-asha">PHC Facility</span>
-              <span class="text-xs text-muted font-bold flex items-center gap-xs">
-                <span class="material-symbols-outlined text-[15px]">distance</span> 4.2 km
-              </span>
+  openDoctorProfileModal(doctorId) {
+    const doc = SWASTHYA_DATA.doctors.find(d => d.id === doctorId) || SWASTHYA_DATA.doctors[0];
+    this.openModal(
+      `<span class="material-symbols-outlined text-primary text-[22px]">badge</span> Doctor Credentials & Schedule`,
+      `
+        <div class="flex flex-col gap-base">
+          <div class="flex items-start gap-md">
+            <div class="doctor-avatar-initials" style="width:64px; height:64px; font-size:1.375rem;">
+              ${doc.name.replace('Dr. ', '').split(' ').map(n=>n[0]).join('')}
             </div>
             <div>
-              <h4 style="font-size:1.0625rem; font-weight:700;">Shirur Primary Health Centre</h4>
-              <p class="text-xs text-muted">Shirur 24x7 Government Primary Health Centre</p>
-            </div>
-
-            <!-- Readiness Indicators -->
-            <div style="display:flex; flex-direction:column; gap:8px;">
-              <div class="facility-readiness-row">
-                <span class="text-xs font-bold flex items-center gap-xs">
-                  <span class="material-symbols-outlined text-[18px] text-primary">medical_services</span> 24x7 Emergency Services
-                </span>
-                <span class="tag-capability">Active</span>
+              <div class="flex items-center gap-xs">
+                <h3 class="font-bold text-lg text-primary">${doc.name}</h3>
+                <span class="abdm-badge"><span class="material-symbols-outlined text-[14px]">verified</span> ABDM Verified</span>
               </div>
-              <div class="facility-readiness-row">
-                <span class="text-xs font-bold flex items-center gap-xs">
-                  <span class="material-symbols-outlined text-[18px] text-secondary">air</span> Oxygen Beds
-                </span>
-                <span class="text-xs font-bold text-secondary">4 / 6 Free</span>
-              </div>
-              <div class="facility-readiness-row">
-                <span class="text-xs font-bold flex items-center gap-xs">
-                  <span class="material-symbols-outlined text-[18px] text-primary">person_check</span> Medical Officer on Duty
-                </span>
-                <span class="text-xs font-bold text-primary">Dr. A. Kulkarni</span>
-              </div>
-            </div>
-
-            <button class="btn btn-referral btn-sm" style="width:100%;" onclick="app.showToast('Calling Shirur PHC Emergency Desk: 02138-222104', 'info')">
-              <span class="material-symbols-outlined text-[16px]">call</span>
-              <span>Call PHC Emergency Desk</span>
-            </button>
-          </div>
-
-          <!-- Demographic Triage Distribution Card with SVG Donut Chart -->
-          <div class="card" style="padding:var(--space-base);">
-            <div class="flex items-center justify-between" style="margin-bottom:var(--space-xs);">
-              <h4 style="font-size:0.9375rem; font-weight:700;">Triage Distribution</h4>
-              <span class="text-xs text-muted font-bold">Shirur Block</span>
-            </div>
-
-            <div class="flex items-center gap-md" style="margin:var(--space-sm) 0;">
-              <div class="donut-chart-container">
-                <svg class="w-full h-full" viewBox="0 0 36 36" style="transform: rotate(-90deg);">
-                  <circle cx="18" cy="18" r="15.915" fill="transparent" stroke="#e0f2e9" stroke-width="3.8"></circle>
-                  <circle cx="18" cy="18" r="15.915" fill="transparent" stroke="#0e4834" stroke-width="3.8" stroke-dasharray="60 40" stroke-dashoffset="0"></circle>
-                  <circle cx="18" cy="18" r="15.915" fill="transparent" stroke="#f59e0b" stroke-width="3.8" stroke-dasharray="25 75" stroke-dashoffset="-60"></circle>
-                  <circle cx="18" cy="18" r="15.915" fill="transparent" stroke="#b91c1c" stroke-width="3.8" stroke-dasharray="15 85" stroke-dashoffset="-85"></circle>
-                </svg>
-                <div class="donut-chart-text">
-                  <span style="font-size:1.125rem; font-weight:700; line-height:1;">148</span>
-                  <span class="text-xs text-muted" style="font-size:0.625rem;">Total</span>
-                </div>
-              </div>
-
-              <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
-                <div class="flex items-center justify-between text-xs">
-                  <span class="flex items-center gap-xs"><span style="width:8px; height:8px; border-radius:50%; background:var(--color-primary);"></span> Low Risk</span>
-                  <strong>60%</strong>
-                </div>
-                <div class="flex items-center justify-between text-xs">
-                  <span class="flex items-center gap-xs"><span style="width:8px; height:8px; border-radius:50%; background:var(--risk-moderate-fg);"></span> Moderate Risk</span>
-                  <strong style="color:var(--risk-moderate-fg);">25%</strong>
-                </div>
-                <div class="flex items-center justify-between text-xs">
-                  <span class="flex items-center gap-xs"><span style="width:8px; height:8px; border-radius:50%; background:var(--risk-emergency-fg);"></span> High / Urgent</span>
-                  <strong style="color:var(--risk-emergency-fg);">15%</strong>
-                </div>
-              </div>
-            </div>
-
-            <div class="alert alert-info" style="padding:6px 10px; font-size:0.75rem; margin-top:4px;">
-              <strong>NCD Screening Coverage:</strong> 82% Completed across Sub-Centres
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  renderJourneyStepper(activeStep = 4) {
-    const steps = [
-      { id: 1, label: "1. Profile", desc: "Done (Talwade)", time: "09:14 AM", i18nKey: "step_patient" },
-      { id: 2, label: "2. Assessment", desc: "Vitals Stored", time: "09:22 AM", i18nKey: "step_assessment" },
-      { id: 3, label: "3. Triage", desc: "High Flagged", time: "09:24 AM", i18nKey: "step_triage" },
-      { id: 4, label: "4. Facility", desc: "PHC Shirur Sel.", time: "Bed Reserved", i18nKey: "step_facility" },
-      { id: 5, label: "5. Referral Slip", desc: "Dispatched", time: "In Transit", i18nKey: "step_referral" },
-      { id: 6, label: "6. Doctor Care", desc: "Waiting MO", time: "Dr. Kulkarni", i18nKey: "step_doctor" },
-      { id: 7, label: "7. Follow-up", desc: "7 Day Target", time: "Village Visit", i18nKey: "step_followup" }
-    ];
-
-    const progressPct = ((activeStep - 1) / (steps.length - 1)) * 100;
-
-    return `
-      <div class="stepper-container">
-        <div class="stepper-rail">
-          <div class="stepper-rail-progress" style="width:${progressPct}%;"></div>
-        </div>
-
-        <div class="patient-journey-stepper">
-          ${steps.map(s => {
-            let stepClass = "";
-            let iconContent = s.id;
-            if (s.id < activeStep) {
-              stepClass = "is-completed";
-              iconContent = '<span class="material-symbols-outlined text-[18px]">check</span>';
-            } else if (s.id === activeStep) {
-              stepClass = "is-active";
-              iconContent = '<span class="material-symbols-outlined text-[18px]">apartment</span>';
-            }
-            return `
-              <div class="journey-step ${stepClass}">
-                <div class="journey-node">${iconContent}</div>
-                <div class="journey-label" data-i18n="${s.i18nKey}">${s.label}</div>
-                <div class="journey-subtext">${s.desc}</div>
-                <div class="text-xs text-muted" style="font-size:0.625rem;">${s.time}</div>
-              </div>
-            `;
-          }).join("")}
-        </div>
-      </div>
-    `;
-  }
-
-  /* ==========================================================================
-     RENDERERS: CITIZEN ABHA PORTAL (Stitch Screen 2431b0db)
-     ========================================================================== */
-  renderPatientPortal() {
-    const c = this.citizenData;
-
-    return `
-      <div class="patient-portal-layout">
-        <!-- Citizen Verified Profile Card -->
-        <div class="citizen-profile-card">
-          <div class="flex items-center gap-md">
-            <div class="citizen-avatar-wrap">
-              RP
-              <div class="citizen-avatar-verified">
-                <span class="material-symbols-outlined text-[14px]">verified</span>
-              </div>
-            </div>
-
-            <div>
-              <div class="flex flex-wrap items-center gap-xs" style="margin-bottom:4px;">
-                <h1 style="font-size:1.5rem; font-weight:700; color:var(--color-primary);">${c.name}</h1>
-                <span class="badge-role badge-role-patient">${c.age} Y • ${c.gender}</span>
-                <span class="abdm-badge">
-                  <span class="material-symbols-outlined text-[14px]">health_and_safety</span> ${c.statusBadge}
-                </span>
-              </div>
-
-              <div class="flex flex-wrap items-center gap-md text-xs text-muted">
-                <span class="flex items-center gap-xs">
-                  ABHA ID: <strong class="numeric-id text-primary">${c.abhaId}</strong>
-                  <button class="btn btn-ghost btn-sm" style="min-height:24px; padding:0 4px;" onclick="app.copyAbhaId('${c.abhaId}')" title="Copy ABHA ID">
-                    <span class="material-symbols-outlined text-[16px] text-secondary">content_copy</span>
-                  </button>
-                </span>
-                <span class="flex items-center gap-xs">
-                  <span class="material-symbols-outlined text-[15px] text-secondary">alternate_email</span> ${c.abhaAddress}
-                </span>
-              </div>
-
-              <div class="flex flex-wrap items-center gap-md text-xs" style="margin-top:6px;">
-                <span class="flex items-center gap-xs">
-                  <span class="material-symbols-outlined text-[16px] text-primary">volunteer_activism</span>
-                  <strong>ASHA Cadre:</strong> ${c.assignedAsha}
-                </span>
-                <span class="flex items-center gap-xs">
-                  <span class="material-symbols-outlined text-[16px] text-secondary">local_hospital</span>
-                  <strong>Linkage PHC:</strong> ${c.linkagePhc}
-                </span>
-              </div>
+              <p class="text-xs font-bold text-secondary">${doc.specialty}</p>
+              <p class="text-xs text-muted">${doc.qualifications}</p>
+              <p class="text-xs text-muted mt-1"><span class="material-symbols-outlined text-[14px]">apartment</span> ${doc.facility}</p>
             </div>
           </div>
 
-          <div class="flex flex-wrap items-center gap-sm">
-            <button class="btn btn-primary btn-sm" onclick="app.openAbhaModal()">
-              <span class="material-symbols-outlined text-[18px]">qr_code_2</span>
-              <span data-i18n="btn_download_qr">Download ABHA Card (QR)</span>
-            </button>
-            <button class="btn btn-secondary btn-sm" onclick="app.requestPatientSync()">
-              <span class="material-symbols-outlined text-[18px]">sync</span>
-              <span data-i18n="btn_request_sync">Request Record Sync</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Active Continuum Phase Card (Stage 6 Active) -->
-        <div class="card">
-          <div class="flex flex-wrap items-center justify-between gap-sm">
-            <div class="flex items-center gap-sm">
-              <span class="sync-dot-live" style="width:12px; height:12px;"></span>
-              <div>
-                <span class="text-xs font-bold text-secondary uppercase tracking-wider" data-i18n="active_continuum">Active Continuum Phase</span>
-                <h3 style="font-size:1.125rem; font-weight:700; color:var(--color-primary);">${c.activePhase}</h3>
-              </div>
-            </div>
-            <div class="tag-capability" style="font-size:0.8125rem; padding:4px 10px;">
-              <span class="material-symbols-outlined text-[16px]">verified_user</span>
-              <span>Protocol Compliance: ${c.protocolCompliance}</span>
-            </div>
+          <div class="bg-surface-container-low p-space-md rounded-xl text-xs flex flex-col gap-xs">
+            <div><strong>Clinical Experience:</strong> ${doc.experience}</div>
+            <div><strong>Languages Spoken:</strong> ${doc.languages || 'Marathi, Hindi, English'}</div>
+            <div><strong>OPD Timings:</strong> ${doc.timings || 'Mon-Sat: 09:00 AM - 02:00 PM'}</div>
+            <div><strong>Consultation Fee:</strong> <span class="text-primary font-bold">${doc.fee}</span></div>
           </div>
 
-          <!-- Continuum Progress Mini Bar -->
-          <div class="continuum-progress-bar">
-            <div class="continuum-grid">
-              <div class="continuum-node is-done"><span>✓ 1. Sxn Triage</span></div>
-              <div class="continuum-node is-done"><span>✓ 2. ANM Lab</span></div>
-              <div class="continuum-node is-done"><span>✓ 3. PHC Visit</span></div>
-              <div class="continuum-node is-done"><span>✓ 4. ECG Rx</span></div>
-              <div class="continuum-node is-done"><span>✓ 5. Med Issuance</span></div>
-              <div class="continuum-node is-active"><span>● 6. Home Protocol</span></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 4 Citizen Quick Action Tiles -->
-        <div class="citizen-action-grid">
-          <div class="citizen-action-tile" onclick="app.requestJanAushadhiRefill()">
-            <div class="flex items-center gap-md">
-              <div class="citizen-action-icon" style="background:#DCFCE7; color:#166534;">
-                <span class="material-symbols-outlined text-[24px]">local_pharmacy</span>
-              </div>
-              <div>
-                <strong data-i18n="jan_aushadhi_title">Jan Aushadhi Refill</strong>
-                <p class="text-xs text-muted" data-i18n="jan_aushadhi_desc">Shirur Hub • Free Subsidized</p>
-              </div>
-            </div>
-            <span class="material-symbols-outlined text-muted text-[18px]">arrow_forward</span>
-          </div>
-
-          <div class="citizen-action-tile" onclick="app.notifyAsha()">
-            <div class="flex items-center gap-md">
-              <div class="citizen-action-icon" style="background:#E0F2FE; color:#0369A1;">
-                <span class="material-symbols-outlined text-[24px]">calendar_add_on</span>
-              </div>
-              <div>
-                <strong data-i18n="notify_asha_title">Notify ASHA Sunita</strong>
-                <p class="text-xs text-muted" data-i18n="notify_asha_desc">Request early visit or call</p>
-              </div>
-            </div>
-            <span class="material-symbols-outlined text-muted text-[18px]">arrow_forward</span>
-          </div>
-
-          <div class="citizen-action-tile" onclick="app.navigateTo('timeline')">
-            <div class="flex items-center gap-md">
-              <div class="citizen-action-icon" style="background:#EDE9FE; color:#6B21A8;">
-                <span class="material-symbols-outlined text-[24px]">folder_shared</span>
-              </div>
-              <div>
-                <strong>Health Records Locker</strong>
-                <p class="text-xs text-muted">ABDM Verified Timeline</p>
-              </div>
-            </div>
-            <span class="material-symbols-outlined text-muted text-[18px]">arrow_forward</span>
-          </div>
-
-          <div class="citizen-action-tile" onclick="app.showToast('Connecting to Tele-MANAS Helpline 14416 (Toll-Free 24x7)...', 'info')">
-            <div class="flex items-center gap-md">
-              <div class="citizen-action-icon" style="background:#FEF3C7; color:#92400E;">
-                <span class="material-symbols-outlined text-[24px]">support_agent</span>
-              </div>
-              <div>
-                <strong data-i18n="tele_manas_title">Tele-MANAS & Support</strong>
-                <p class="text-xs text-muted" data-i18n="tele_manas_desc">14416 (Toll-Free Helpline)</p>
-              </div>
-            </div>
-            <span class="material-symbols-outlined text-muted text-[18px]">arrow_forward</span>
-          </div>
-        </div>
-
-        <!-- Bento Split: Active Prescriptions Locker (8 cols) & Upcoming Appointments / Consent (4 cols) -->
-        <div class="citizen-bento-grid">
-          <!-- Active Prescriptions Locker -->
-          <div class="card">
-            <div class="card-header">
-              <div>
-                <h3 class="card-title" data-i18n="nav_prescriptions">Prescriptions & Active Medicines</h3>
-                <p class="text-xs text-muted">Dispensed by Shirur PHC & Jan Aushadhi Kendra</p>
-              </div>
-              <span class="tag-capability">3 Active Prescriptions</span>
-            </div>
-
-            <table class="prescription-list-table">
-              <thead>
-                <tr>
-                  <th>Medicine & Dosage</th>
-                  <th>Duration</th>
-                  <th>Scheme / Source</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${c.prescriptions.map(p => `
-                  <tr>
-                    <td>
-                      <strong>${p.medicine}</strong><br>
-                      <span class="text-xs text-muted">${p.dosage}</span>
-                    </td>
-                    <td><span class="text-xs">${p.duration}</span></td>
-                    <td>
-                      <span class="jan-aushadhi-badge">${p.source}</span>
-                    </td>
-                    <td>
-                      <span class="text-xs font-bold text-primary">${p.status}</span>
-                    </td>
-                  </tr>
-                `).join("")}
-              </tbody>
-            </table>
-          </div>
-
-          <!-- Upcoming Appointments & ABDM Consent -->
-          <div style="display:flex; flex-direction:column; gap:var(--space-md);">
-            <!-- Upcoming Schedule -->
-            <div class="card">
-              <div class="flex items-center justify-between" style="margin-bottom:var(--space-sm);">
-                <h4 style="font-size:0.9375rem; font-weight:700;">Upcoming Care Schedule</h4>
-                <span class="text-xs text-muted">Next 7 Days</span>
-              </div>
-
-              <div style="display:flex; flex-direction:column; gap:8px;">
-                ${c.upcomingAppointments.map(a => `
-                  <div style="padding:10px; background:var(--surface-subtle); border-radius:var(--radius-md); border:1px solid var(--border-structural);">
-                    <div class="flex items-center justify-between text-xs text-muted">
-                      <span>${a.date}</span>
-                      <span class="tag-capability" style="font-size:0.6875rem; padding:2px 6px;">${a.type}</span>
-                    </div>
-                    <strong style="font-size:0.875rem; margin-top:2px; display:block;">${a.title}</strong>
-                    <span class="text-xs text-muted">${a.location}</span>
-                  </div>
-                `).join("")}
-              </div>
-            </div>
-
-            <!-- ABDM Consent -->
-            <div class="card">
-              <div class="flex items-center justify-between" style="margin-bottom:var(--space-xs);">
-                <h4 style="font-size:0.9375rem; font-weight:700;">ABDM Consent Management</h4>
-                <span class="abdm-badge">Active</span>
-              </div>
-              <p class="text-xs text-muted" style="margin-bottom:var(--space-sm);">Federated citizen consent granted to Shirur PHC cluster under ABDM M1-M3 framework.</p>
-              <button class="btn btn-secondary btn-sm" style="width:100%;" onclick="app.showToast('ABDM Consent Audit Trail: 2 active provider links verified.', 'info')">
-                <span class="material-symbols-outlined text-[16px]">shield_person</span>
-                <span>Manage Linked Health Records</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  /* ==========================================================================
-     RENDERERS: PATIENT REGISTRATION & VITALS WIZARD
-     ========================================================================== */
-  renderRegistrationWizard() {
-    return `
-      <div class="form-step-wizard">
-        <div class="wizard-header">
           <div>
-            <h2 style="font-size:1.25rem;">Frontline Patient Registration & Clinical Intake</h2>
-            <p class="text-xs text-muted">Offline-capable digital registry with automatic ABHA number formatting</p>
-          </div>
-          <div class="wizard-step-pills">
-            <span class="wizard-pill ${this.wizardStep === 1 ? 'is-active' : ''}">1. Demographics</span>
-            <span class="wizard-pill ${this.wizardStep === 2 ? 'is-active' : ''}">2. Symptoms & Vitals</span>
-            <span class="wizard-pill ${this.wizardStep === 3 ? 'is-active' : ''}">3. Triage & Match</span>
+            <strong class="text-xs text-neutral block mb-1">Clinical Biography & Specialization:</strong>
+            <p class="text-xs text-muted leading-relaxed">${doc.bio}</p>
           </div>
         </div>
-
-        <div class="wizard-body">
-          ${this.wizardStep === 1 ? this.renderWizardStep1() : ''}
-          ${this.wizardStep === 2 ? this.renderWizardStep2() : ''}
-        </div>
-
-        <div class="wizard-footer">
-          <button class="btn btn-ghost" id="wizardBackBtn" ${this.wizardStep === 1 ? 'disabled' : ''}>
-            ← Back
-          </button>
-          <button class="btn btn-primary" id="wizardNextBtn">
-            ${this.wizardStep === 1 ? 'Continue to Vitals & Symptoms →' : 'Evaluate Clinical Triage →'}
-          </button>
-        </div>
-      </div>
-    `;
+      `,
+      `
+        <button class="btn btn-secondary btn-sm" onclick="app.closeModal()">Close</button>
+        <button class="btn btn-primary btn-sm" onclick="app.closeModal(); app.selectDoctorForBooking('${doc.id}'); app.navigateTo('find-doctor');">
+          <span class="material-symbols-outlined text-[16px]">event_available</span>
+          <span>Book Consultation</span>
+        </button>
+      `
+    );
   }
 
-  renderWizardStep1() {
-    return `
-      <div class="view-grid-2col">
-        <div>
+  openDirectionsModal(facility) {
+    this.openModal(
+      `<span class="material-symbols-outlined text-primary text-[22px]">directions</span> OPD Directions & Transit Info`,
+      `
+        <div class="flex flex-col gap-base">
+          <div class="bg-surface-container-low p-space-md rounded-xl text-xs flex flex-col gap-xs">
+            <strong class="text-sm font-bold text-primary">${facility}</strong>
+            <p class="text-muted">Origin: Talwade Village (Sector 4), Shirur Block</p>
+            <p class="text-muted">Assigned Transit Guide: ASHA Sunita More (Phone: +91 94230 01928)</p>
+          </div>
+
+          <div class="flex flex-col gap-sm text-xs">
+            <div class="flex items-start gap-sm p-2 rounded bg-surface-subtle border border-structural">
+              <span class="material-symbols-outlined text-[18px] text-primary">directions_bus</span>
+              <div>
+                <strong>MSRTC State Transport Bus:</strong>
+                <p class="text-muted">Bus every 30 mins from Shirur ST Stand to Pune Swargate / Station.</p>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-sm p-2 rounded bg-surface-subtle border border-structural">
+              <span class="material-symbols-outlined text-[18px] text-red-600">ambulance</span>
+              <div>
+                <strong>Emergency Transport:</strong>
+                <p class="text-muted">Free 108 ALS Ambulance available 24x7 for assisted citizen transfers.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      `,
+      `<button class="btn btn-primary btn-sm" onclick="app.closeModal()">Got it</button>`
+    );
+  }
+
+  openRescheduleModal(aptId) {
+    const apt = this.citizenData.upcomingAppointments.find(a => a.id === aptId) || this.citizenData.upcomingAppointments[0];
+    this.openModal(
+      `<span class="material-symbols-outlined text-primary text-[22px]">edit_calendar</span> Reschedule Consultation`,
+      `
+        <div class="flex flex-col gap-base">
+          <p class="text-xs text-muted">Select your new preferred date and time for consultation with <strong>${apt ? apt.doctorName : 'Doctor'}</strong>:</p>
+          
           <div class="form-group">
-            <label class="form-label" data-i18n="form_fullname">Full Patient Name <span class="required-star">*</span></label>
-            <input type="text" class="form-input" id="regName" value="${this.activePatient.name || ''}" placeholder="e.g. Ramesh Patil">
+            <label class="form-label">Select New Date</label>
+            <select class="form-select text-xs" id="rescheduleDateSelect">
+              <option>Monday, 27 Oct 2026 (10:30 AM)</option>
+              <option>Wednesday, 29 Oct 2026 (11:00 AM)</option>
+              <option>Friday, 31 Oct 2026 (10:00 AM)</option>
+            </select>
           </div>
 
-          <div class="flex gap-base">
-            <div class="form-group" style="flex:1;">
-              <label class="form-label" data-i18n="form_age">Age (Years) <span class="required-star">*</span></label>
-              <input type="number" class="form-input tabular-nums" id="regAge" value="${this.activePatient.age || ''}" placeholder="e.g. 62">
+          <div class="form-group">
+            <label class="form-label">Reason for Rescheduling</label>
+            <input type="text" class="form-input text-xs" id="rescheduleReasonInput" placeholder="e.g. Family commitment, transit delay...">
+          </div>
+        </div>
+      `,
+      `
+        <button class="btn btn-secondary btn-sm" onclick="app.closeModal()">Cancel</button>
+        <button class="btn btn-primary btn-sm" onclick="
+          const newDate = document.getElementById('rescheduleDateSelect').value;
+          if (app.citizenData.upcomingAppointments[0]) {
+            app.citizenData.upcomingAppointments[0].date = newDate.split(' (')[0];
+            app.citizenData.upcomingAppointments[0].time = newDate.split(' (')[1].replace(')', '');
+          }
+          app.closeModal();
+          app.showToast('Appointment successfully rescheduled!', 'success');
+          app.renderCurrentView();
+        ">
+          Confirm Reschedule
+        </button>
+      `
+    );
+  }
+
+  openCancelAppointmentModal(aptId) {
+    const apt = this.citizenData.upcomingAppointments.find(a => a.id === aptId) || this.citizenData.upcomingAppointments[0];
+    this.openModal(
+      `<span class="material-symbols-outlined text-red-600 text-[22px]">warning</span> Cancel Consultation`,
+      `
+        <div class="flex flex-col gap-base text-center">
+          <p class="text-sm">Are you sure you want to cancel your appointment with <strong>${apt ? apt.doctorName : 'the doctor'}</strong>?</p>
+          <div class="bg-red-50 p-space-md rounded-xl text-xs text-red-800 text-left">
+            <strong>Note:</strong> Your issued token will be released. You can rebook anytime free of charge under NHM.
+          </div>
+        </div>
+      `,
+      `
+        <button class="btn btn-secondary btn-sm" onclick="app.closeModal()">Keep Appointment</button>
+        <button class="btn btn-destructive btn-sm" onclick="app.cancelAppointment('${aptId}')">
+          Yes, Cancel Appointment
+        </button>
+      `
+    );
+  }
+
+  openTokenSlipModal(aptId) {
+    const apt = this.citizenData.upcomingAppointments.find(a => a.id === aptId) || this.citizenData.upcomingAppointments[0];
+    const c = this.citizenData;
+    this.openModal(
+      `<span class="material-symbols-outlined text-primary text-[22px]">receipt</span> ABDM Public Health Token Slip`,
+      `
+        <div class="p-space-md bg-surface-card border border-structural rounded-xl text-xs flex flex-col gap-sm">
+          <div class="flex items-center justify-between border-b pb-2">
+            <div class="flex items-center gap-xs">
+              <img src="src/assets/emblem.svg" class="w-6 h-6" alt="Emblem">
+              <div>
+                <strong class="text-xs text-primary block">NATIONAL HEALTH AUTHORITY</strong>
+                <span class="text-[10px] text-muted">Ayushman Bharat Digital Mission (ABDM)</span>
+              </div>
             </div>
-            <div class="form-group" style="flex:1;">
-              <label class="form-label" data-i18n="form_gender">Gender <span class="required-star">*</span></label>
-              <select class="form-select" id="regGender">
-                <option value="Male" ${this.activePatient.gender === 'Male' ? 'selected' : ''}>Male</option>
-                <option value="Female" ${this.activePatient.gender === 'Female' ? 'selected' : ''}>Female</option>
-                <option value="Other">Other</option>
+            <span class="abdm-badge font-bold">DIGITAL TOKEN</span>
+          </div>
+
+          <div class="text-center py-sm">
+            <h2 class="font-numeric-id font-bold text-2xl text-primary">${apt ? apt.token : 'TOKEN-SAS-14'}</h2>
+            <p class="text-xs text-muted">Show this token at OPD Registration Desk</p>
+          </div>
+
+          <div class="grid grid-cols-2 gap-xs bg-surface-subtle p-2 rounded">
+            <div><strong>Patient:</strong> ${c.name} (${c.age} Y)</div>
+            <div><strong>ABHA ID:</strong> <span class="numeric-id text-primary font-bold">${c.abhaId}</span></div>
+            <div><strong>Doctor:</strong> ${apt ? apt.doctorName : 'Dr. Sanjeev Thorat'}</div>
+            <div><strong>Facility:</strong> ${apt ? apt.facility : 'Sassoon Hospital'}</div>
+            <div><strong>Date & Time:</strong> ${apt ? apt.date + ' ' + apt.time : 'Friday 10:30 AM'}</div>
+            <div><strong>Fee:</strong> <span class="text-emerald-700 font-bold">FREE (NHM)</span></div>
+          </div>
+        </div>
+      `,
+      `
+        <button class="btn btn-secondary btn-sm" onclick="window.print()">
+          <span class="material-symbols-outlined text-[16px]">print</span>
+          <span>Print Slip</span>
+        </button>
+        <button class="btn btn-primary btn-sm" onclick="app.closeModal()">Close</button>
+      `
+    );
+  }
+
+  openEcgViewerModal() {
+    this.openModal(
+      `<span class="material-symbols-outlined text-primary text-[22px]">ecg_heart</span> 12-Lead Diagnostic ECG Examination`,
+      `
+        <div class="flex flex-col gap-base">
+          <div class="flex items-center justify-between bg-surface-container-low p-2.5 rounded-lg text-xs">
+            <div>
+              <strong>Patient: Ramesh Patil (62 Y)</strong> • ABHA: <span class="numeric-id font-bold text-primary">91-4029-1823-0192</span>
+            </div>
+            <span class="tag-capability">Validated Tele-ECG</span>
+          </div>
+
+          <!-- ECG Waveform Graphical Simulation -->
+          <div style="background:#0F172A; border-radius:8px; padding:16px; color:#38BDF8; font-family:monospace; position:relative; overflow:hidden;">
+            <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:8px; opacity:0.8;">
+              <span>LEAD II (Standard) • 25mm/s • 10mm/mV</span>
+              <span>HR: 74 bpm • Sinus Rhythm</span>
+            </div>
+            
+            <!-- Simulated Crisp SVG Waveform -->
+            <svg viewBox="0 0 500 80" style="width:100%; height:80px; stroke:#10B981; fill:none; stroke-width:2;">
+              <path d="M0,40 L30,40 L35,36 L40,40 L50,40 L55,42 L60,10 L65,70 L70,36 L75,40 L90,40 L100,32 L115,40 L150,40 L155,36 L160,40 L170,40 L175,42 L180,10 L185,70 L190,36 L195,40 L210,40 L220,32 L235,40 L270,40 L275,36 L280,40 L290,40 L295,42 L300,10 L305,70 L310,36 L315,40 L330,40 L340,32 L355,40 L390,40 L395,36 L400,40 L410,40 L415,42 L420,10 L425,70 L430,36 L435,40 L450,40 L460,32 L475,40 L500,40" />
+            </svg>
+          </div>
+
+          <div class="bg-surface-subtle p-3 rounded-lg text-xs">
+            <strong class="text-primary block mb-1">Clinical Interpretation (Dr. Rajesh Kulkarni):</strong>
+            <p class="text-muted">Normal sinus rhythm with mild non-specific ST variations. Stable progression compared to acute emergency baseline on 18 Sep 2026.</p>
+          </div>
+        </div>
+      `,
+      `
+        <button class="btn btn-secondary btn-sm" onclick="app.showToast('Downloaded 12_Lead_ECG_Report_Shirur.pdf', 'success')">
+          <span class="material-symbols-outlined text-[16px]">download</span>
+          <span>Download PDF</span>
+        </button>
+        <button class="btn btn-primary btn-sm" onclick="app.closeModal()">Close</button>
+      `
+    );
+  }
+
+  openAbhaModal() {
+    const c = this.citizenData;
+    this.openModal(
+      `<span class="material-symbols-outlined text-primary text-[22px]">badge</span> Official ABHA Health Card`,
+      `
+        <div class="abha-card-container">
+          <div class="abha-card-inner">
+            <div class="abha-card-header">
+              <div class="flex items-center gap-xs">
+                <img src="src/assets/emblem.svg" class="w-8 h-8" alt="ABDM Emblem">
+                <div>
+                  <strong style="color:#FFFFFF; font-size:0.9375rem; display:block; line-height:1.2;">राष्ट्रीय आरोग्य प्राधिकरण</strong>
+                  <span style="color:#A8DAB5; font-size:0.6875rem; letter-spacing:0.04em;">NATIONAL HEALTH AUTHORITY</span>
+                </div>
+              </div>
+              <span class="abdm-pill-white">ABHA CARD</span>
+            </div>
+
+            <div class="abha-card-body">
+              <div class="flex items-center gap-md">
+                <div class="abha-qr-box">
+                  <span class="material-symbols-outlined text-[64px] text-primary">qr_code_2</span>
+                </div>
+
+                <div class="abha-card-details">
+                  <h2 style="font-size:1.25rem; font-weight:800; color:#FFFFFF; margin-bottom:2px;">${c.name}</h2>
+                  <p style="color:#D1FAE5; font-size:0.8125rem;">DOB / Age: 1964 (${c.age} Y) • ${c.gender}</p>
+                  <p style="color:#D1FAE5; font-size:0.8125rem;">Blood Group: ${c.bloodGroup || 'B +ve'}</p>
+
+                  <div style="margin-top:10px;">
+                    <span style="color:#A8DAB5; font-size:0.6875rem; font-weight:700; text-transform:uppercase;">ABHA Number</span>
+                    <strong style="color:#FFFFFF; font-size:1.125rem; letter-spacing:0.08em; display:block; font-family:var(--font-numeric);">${c.abhaId}</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="abha-card-footer">
+              <span>Ayushman Bharat Digital Mission (ABDM)</span>
+              <span>14416 / 104 Toll-Free</span>
+            </div>
+          </div>
+        </div>
+      `,
+      `
+        <button class="btn btn-secondary btn-sm" onclick="app.showToast('Downloaded ABHA_Card_${c.name.replace(' ', '_')}.pdf', 'success')">
+          <span class="material-symbols-outlined text-[16px]">download</span>
+          <span>Download PDF</span>
+        </button>
+        <button class="btn btn-primary btn-sm" onclick="app.closeModal()">Close</button>
+      `
+    );
+  }
+
+  openModal(title, bodyHtml, footerHtml = "") {
+    this.closeModal();
+
+    const backdrop = document.createElement("div");
+    backdrop.className = "swasthya-modal-backdrop";
+    backdrop.id = "globalModalBackdrop";
+    backdrop.onclick = (e) => {
+      if (e.target === backdrop) this.closeModal();
+    };
+
+    backdrop.innerHTML = `
+      <div class="swasthya-modal-dialog" onclick="event.stopPropagation()">
+        <div class="swasthya-modal-header">
+          <h3 class="swasthya-modal-title">${title}</h3>
+          <button class="btn btn-ghost btn-sm" style="min-height:30px; padding:0 6px;" onclick="app.closeModal()">
+            <span class="material-symbols-outlined text-[20px]">close</span>
+          </button>
+        </div>
+        <div class="swasthya-modal-body">
+          ${bodyHtml}
+        </div>
+        ${footerHtml ? `<div class="swasthya-modal-footer">${footerHtml}</div>` : ''}
+      </div>
+    `;
+
+    document.body.appendChild(backdrop);
+  }
+
+  closeModal() {
+    const existing = document.getElementById("globalModalBackdrop");
+    if (existing) existing.remove();
+  }
+
+  /* ==========================================================================
+     DOCTOR ACTIONS (STAYS IN DOCTOR ROLE)
+     ========================================================================== */
+  selectDoctorQueuePatient(patientId) {
+    const p = SWASTHYA_DATA.doctorQueue.find(item => item.id === patientId);
+    if (p) {
+      this.activeDoctorPatient = p;
+      this.renderCurrentView();
+    }
+  }
+
+  saveDoctorConsultation() {
+    const diagInput = document.getElementById("docDiagnosisInput");
+    const notesInput = document.getElementById("docNotesInput");
+    const delegateCheck = document.getElementById("delegateAshaCheck");
+
+    const diag = diagInput ? diagInput.value : "Acute respiratory stabilization";
+    const notes = notesInput ? notesInput.value : "Treatment orders logged.";
+
+    if (window.offlineStore) {
+      window.offlineStore.saveRecord("clinical_consultation", {
+        patientId: this.activeDoctorPatient.id,
+        diagnosis: diag,
+        orders: notes,
+        delegatedAsha: delegateCheck ? delegateCheck.checked : true,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    this.showToast("Clinical notes saved & e-Prescription issued! Follow-up assigned to ASHA Sunita More.", "success");
+    // Remains strictly in Doctor role
+    setTimeout(() => {
+      this.navigateTo("appointments");
+    }, 1000);
+  }
+
+  /* ==========================================================================
+     ADMIN VERIFICATION ACTIONS
+     ========================================================================== */
+  verifyDoctor(verId) {
+    const item = SWASTHYA_DATA.adminDoctorVerifications.find(v => v.id === verId);
+    if (item) {
+      item.status = "Approved & Active";
+      item.statusClass = "status-approved";
+      this.showToast(`Credential Verified: ${item.doctorName} approved for tele-triage!`, "success");
+      this.renderCurrentView();
+    }
+  }
+
+  rejectDoctor(verId) {
+    const item = SWASTHYA_DATA.adminDoctorVerifications.find(v => v.id === verId);
+    if (item) {
+      item.status = "Rejected";
+      item.statusClass = "status-rejected";
+      this.showToast(`Application for ${item.doctorName} rejected.`, "warning");
+      this.renderCurrentView();
+    }
+  }
+
+  /* ==========================================================================
+     ASHA REGISTRATION & TRIAGE WIZARD
+     ========================================================================== */
+  startNewRegistration() {
+    this.activePatient = {
+      id: "pat_" + Date.now(),
+      name: "",
+      age: "",
+      gender: "Male",
+      village: "Talwade (Sector 4)",
+      abhaId: "91-" + Math.floor(1000 + Math.random() * 9000) + "-" + Math.floor(1000 + Math.random() * 9000) + "-4021",
+      phone: "+91 9",
+      symptoms: [],
+      vitals: { spo2: 98, bpSys: 120, bpDia: 80, pulse: 72, temp: "98.6" },
+      timeline: []
+    };
+    this.wizardStep = 1;
+    this.navigateTo("registration");
+  }
+
+  bindWizardEvents() {
+    const nextBtn = document.getElementById("wizardNextBtn");
+    const backBtn = document.getElementById("wizardBackBtn");
+
+    if (nextBtn) {
+      nextBtn.addEventListener("click", () => {
+        if (this.wizardStep === 1) {
+          const nameInput = document.getElementById("regName");
+          const ageInput = document.getElementById("regAge");
+          if (!nameInput.value.trim()) {
+            this.showToast("Please enter the patient's full name", "warning");
+            return;
+          }
+          this.activePatient.name = nameInput.value.trim();
+          this.activePatient.age = ageInput.value.trim() || 40;
+          this.activePatient.gender = document.getElementById("regGender").value;
+          this.activePatient.village = document.getElementById("regVillage").value;
+          this.activePatient.abhaId = document.getElementById("regAbha").value;
+          this.activePatient.phone = document.getElementById("regPhone").value;
+
+          this.wizardStep = 2;
+          this.renderCurrentView();
+        } else if (this.wizardStep === 2) {
+          this.activePatient.vitals.spo2 = parseFloat(document.getElementById("inputSpo2").value) || 98;
+          this.activePatient.vitals.bpSys = parseFloat(document.getElementById("inputBpSys").value) || 120;
+          this.activePatient.vitals.bpDia = parseFloat(document.getElementById("inputBpDia").value) || 80;
+          this.activePatient.vitals.pulse = parseFloat(document.getElementById("inputPulse").value) || 72;
+          this.activePatient.vitals.temp = document.getElementById("inputTemp").value || "98.6";
+
+          if (window.offlineStore) {
+            window.offlineStore.saveRecord("patient_assessment", this.activePatient);
+          }
+          this.navigateTo("triage");
+        }
+      });
+    }
+
+    if (backBtn) {
+      backBtn.addEventListener("click", () => {
+        if (this.wizardStep > 1) {
+          this.wizardStep--;
+          this.renderCurrentView();
+        }
+      });
+    }
+
+    document.querySelectorAll(".symptom-tag-btn").forEach(btn => {
+      btn.addEventListener("click", e => {
+        const symptomId = e.currentTarget.getAttribute("data-symptom-id");
+        const idx = this.activePatient.symptoms.indexOf(symptomId);
+        if (idx > -1) {
+          this.activePatient.symptoms.splice(idx, 1);
+        } else {
+          this.activePatient.symptoms.push(symptomId);
+        }
+        this.renderCurrentView();
+      });
+    });
+  }
+
+  /* ==========================================================================
+     ASHA FIELD WORKER INTERACTIVE HANDLERS & MODALS
+     ========================================================================== */
+  handleAshaPatientSearch(query) {
+    this.ashaPatientSearch = query || "";
+    this.renderCurrentView();
+  }
+
+  setAshaVillageFilter(village) {
+    this.ashaVillageFilter = village;
+    this.renderCurrentView();
+  }
+
+  setAshaPatientCategory(cat) {
+    this.ashaPatientFilter = cat;
+    this.renderCurrentView();
+  }
+
+  setAshaReferralFilter(filter) {
+    this.ashaReferralFilter = filter;
+    this.renderCurrentView();
+  }
+
+  setAshaFollowUpTab(tab) {
+    this.ashaFollowUpTab = tab;
+    this.renderCurrentView();
+  }
+
+  completeFollowUp(fuId) {
+    const fu = (SWASTHYA_DATA.ashaFollowUps || []).find(f => f.id === fuId);
+    if (fu) {
+      fu.completed = true;
+      fu.dueStatus = "Completed";
+      if (window.offlineStore) {
+        window.offlineStore.saveRecord("follow_up_completed", fu);
+      }
+      this.showToast(`Follow-up completed for ${fu.patientName}! Post-care log recorded.`, "success");
+      this.renderCurrentView();
+    }
+  }
+
+  recordPatientVitals(patientName) {
+    this.openVitalsModal(patientName);
+  }
+
+  markImmunizationDone(childName) {
+    this.showToast(`Home pre-counselling verified for ${childName}. Added to Friday VHSND cohort roster.`, "success");
+  }
+
+  showAmbulanceTracker() {
+    this.openModal(
+      `<span class="material-symbols-outlined text-danger text-[22px]">airport_shuttle</span> 108 Emergency Ambulance GPS Tracker`,
+      `
+        <div class="flex flex-col gap-base">
+          <div class="p-3 rounded-lg bg-surface-container-low text-xs flex flex-col gap-1 border border-structural">
+            <div class="flex justify-between"><strong>Ambulance Unit:</strong> <span class="font-bold text-danger">MH-12-CZ-9812 (ALS Equipped)</span></div>
+            <div class="flex justify-between"><strong>Driver / EMT:</strong> <span>Santosh Waghmare (+91 98220 88102)</span></div>
+            <div class="flex justify-between"><strong>Origin Base:</strong> <span>Shirur Cluster Hub</span></div>
+            <div class="flex justify-between"><strong>Patient En Route:</strong> <strong class="text-primary">Kavita Jadhav (28 Y)</strong></div>
+            <div class="flex justify-between"><strong>Destination:</strong> <strong class="text-secondary">Shirur 24x7 PHC (Oxygen Bay Reserved)</strong></div>
+          </div>
+
+          <!-- GPS Telemetry Simulated Screen -->
+          <div style="background:#0F172A; border-radius:10px; padding:16px; color:#38BDF8; font-family:monospace; position:relative;">
+            <div class="flex justify-between text-xs mb-2 opacity-80">
+              <span>GPS FIX: LOCK (14 Satellites) • 4G Telemetry</span>
+              <span class="text-emerald-400 font-bold">SPEED: 58 km/h</span>
+            </div>
+            
+            <div class="py-4 text-center">
+              <span class="material-symbols-outlined text-[42px] text-amber-400 block animate-bounce">near_me</span>
+              <h3 class="text-lg font-bold text-white mt-1">ETA: 12 Minutes</h3>
+              <p class="text-xs text-slate-400">Current Location: Near Shirur Bypass Junction (4.1 km remaining)</p>
+            </div>
+
+            <div class="w-full bg-slate-700 h-2 rounded-full overflow-hidden mt-2">
+              <div class="bg-amber-400 h-full w-3/4 animate-pulse"></div>
+            </div>
+          </div>
+
+          <div class="alert alert-info text-xs">
+            <span class="material-symbols-outlined text-[16px]">verified</span>
+            <span>Dr. A. Kulkarni at Shirur PHC has accepted live inbound telemetry. Emergency triage bay #4 is prepared.</span>
+          </div>
+        </div>
+      `,
+      `
+        <a class="btn btn-destructive btn-sm" href="tel:108">
+          <span class="material-symbols-outlined text-[16px]">call</span>
+          <span>Call 108 Dispatcher</span>
+        </a>
+        <button class="btn btn-primary btn-sm" onclick="app.closeModal()">Close Tracker</button>
+      `
+    );
+  }
+
+  shareReferralSlip(patientName) {
+    const patient = (SWASTHYA_DATA.ashaReferrals || []).find(r => r.patientName.includes(patientName)) || SWASTHYA_DATA.ashaReferrals[0];
+    this.openModal(
+      `<span class="material-symbols-outlined text-primary text-[22px]">receipt_long</span> Digital Referral Authorization Slip`,
+      `
+        <div class="p-space-md bg-surface-card border border-structural rounded-xl text-xs flex flex-col gap-sm">
+          <div class="flex items-center justify-between border-b pb-2">
+            <div class="flex items-center gap-xs">
+              <img src="src/assets/emblem.svg" class="w-6 h-6" alt="Emblem">
+              <div>
+                <strong class="text-xs text-primary block">PUBLIC HEALTH REFERRAL SLIP</strong>
+                <span class="text-[10px] text-muted">Government of Maharashtra • NHM Grid</span>
+              </div>
+            </div>
+            <span class="abdm-badge font-bold">ABDM VERIFIED</span>
+          </div>
+
+          <div class="text-center py-2 bg-surface-container rounded-lg">
+            <span class="text-[10px] text-muted uppercase font-bold tracking-wider">Referral Token ID</span>
+            <h2 class="font-numeric-id font-bold text-xl text-primary">${patient ? patient.slipToken : 'REF-2026-PHC-9021'}</h2>
+          </div>
+
+          <div class="grid grid-cols-2 gap-xs bg-surface-subtle p-2 rounded">
+            <div><strong>Patient:</strong> ${patient ? patient.patientName : patientName} (${patient ? patient.age : '58'} Y)</div>
+            <div><strong>ABHA ID:</strong> <span class="numeric-id text-primary font-bold">${patient ? patient.abhaId : '91-3319-7721-0094'}</span></div>
+            <div><strong>Referred To:</strong> ${patient ? patient.facilityName : 'Shirur PHC'}</div>
+            <div><strong>Assigned MO:</strong> ${patient ? patient.doctorAssigned : 'Dr. A. Kulkarni'}</div>
+            <div><strong>Clinical Reason:</strong> <span class="text-danger font-semibold">${patient ? patient.clinicalNeed : 'Diabetic Retinopathy'}</span></div>
+            <div><strong>Transport:</strong> ${patient ? patient.transportMode : 'Family Transit'}</div>
+          </div>
+        </div>
+      `,
+      `
+        <button class="btn btn-secondary btn-sm" onclick="app.showToast('SMS Referral Link sent to patient mobile number!', 'success')">
+          <span class="material-symbols-outlined text-[16px]">sms</span>
+          <span>Send SMS</span>
+        </button>
+        <button class="btn btn-secondary btn-sm" onclick="window.print()">
+          <span class="material-symbols-outlined text-[16px]">print</span>
+          <span>Print Slip</span>
+        </button>
+        <button class="btn btn-primary btn-sm" onclick="app.closeModal()">Done</button>
+      `
+    );
+  }
+
+  requestReplenishment() {
+    this.openModal(
+      `<span class="material-symbols-outlined text-primary text-[22px]">inventory</span> ASHA Kit Replenishment Indent`,
+      `
+        <div class="flex flex-col gap-base text-xs">
+          <p class="text-muted">Submit an automated sub-centre supply indent to the Shirur Central Medical Store:</p>
+
+          <div class="flex flex-col gap-xs">
+            <label class="flex items-center gap-xs p-2 rounded bg-surface-subtle cursor-pointer">
+              <input type="checkbox" checked id="reqIFA">
+              <div><strong>Iron Folic Acid (IFA) Tablets:</strong> <span class="text-muted">Request 200 Foil Packs</span></div>
+            </label>
+            <label class="flex items-center gap-xs p-2 rounded bg-surface-subtle cursor-pointer">
+              <input type="checkbox" checked id="reqHb">
+              <div><strong>Hb Color Scale Strips:</strong> <span class="text-muted">Request 50 Strips Refill</span></div>
+            </label>
+            <label class="flex items-center gap-xs p-2 rounded bg-red-50 text-red-900 cursor-pointer">
+              <input type="checkbox" checked id="reqNishchay">
+              <div><strong>Pregnancy Test Strips (Nishchay):</strong> <span class="font-bold text-red-800">URGENT RESTOCK (25 Strips)</span></div>
+            </label>
+            <label class="flex items-center gap-xs p-2 rounded bg-surface-subtle cursor-pointer">
+              <input type="checkbox" id="reqCuff">
+              <div><strong>Omron Digital BP Cuff:</strong> <span class="text-muted">Calibration / Replacement Request</span></div>
+            </label>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Special Indent Remarks</label>
+            <input type="text" class="form-input text-xs" id="indentRemarks" placeholder="e.g. Expedite for Friday VHSND immunization session...">
+          </div>
+        </div>
+      `,
+      `
+        <button class="btn btn-secondary btn-sm" onclick="app.closeModal()">Cancel</button>
+        <button class="btn btn-primary btn-sm" onclick="
+          app.closeModal();
+          app.showToast('ASHA Kit Indent #IND-2026-9921 submitted to Shirur Central Medical Store!', 'success');
+        ">
+          Submit Indent Order
+        </button>
+      `
+    );
+  }
+
+  openVitalsModal(patientName = "") {
+    const defaultPatient = patientName ? (this.registeredPatients.find(p=>p.name.includes(patientName)) || this.activePatient) : this.activePatient;
+    this.openModal(
+      `<span class="material-symbols-outlined text-primary text-[22px]">vital_signs</span> Quick Vitals Capture & Triage`,
+      `
+        <div class="flex flex-col gap-base">
+          <div class="form-group">
+            <label class="form-label">Select Patient from Cohort</label>
+            <select class="form-select text-xs" id="quickVitalPatientSelect">
+              ${this.registeredPatients.map(p => `
+                <option value="${p.id}" ${p.name === defaultPatient.name ? 'selected' : ''}>
+                  ${p.name} (${p.age}y / ${p.gender}) • ${p.village}
+                </option>
+              `).join("")}
+            </select>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-xs">
+            <div class="vital-input-card">
+              <label class="form-label text-xs">SpO2 (%)</label>
+              <input type="number" class="form-input text-sm font-bold" id="qSpo2" value="98" min="60" max="100">
+            </div>
+            <div class="vital-input-card">
+              <label class="form-label text-xs">Sys BP (mmHg)</label>
+              <input type="number" class="form-input text-sm font-bold" id="qBpSys" value="120">
+            </div>
+            <div class="vital-input-card">
+              <label class="form-label text-xs">Dia BP (mmHg)</label>
+              <input type="number" class="form-input text-sm font-bold" id="qBpDia" value="80">
+            </div>
+            <div class="vital-input-card">
+              <label class="form-label text-xs">Pulse (bpm)</label>
+              <input type="number" class="form-input text-sm font-bold" id="qPulse" value="76">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-xs">
+            <div class="vital-input-card">
+              <label class="form-label text-xs">Temp (°F)</label>
+              <input type="text" class="form-input text-xs" id="qTemp" value="98.6">
+            </div>
+            <div class="vital-input-card">
+              <label class="form-label text-xs">Blood Sugar (mg/dL)</label>
+              <input type="number" class="form-input text-xs" id="qSugar" value="120">
+            </div>
+          </div>
+        </div>
+      `,
+      `
+        <button class="btn btn-secondary btn-sm" onclick="app.closeModal()">Cancel</button>
+        <button class="btn btn-primary btn-sm" onclick="
+          const patId = document.getElementById('quickVitalPatientSelect').value;
+          const targetP = app.registeredPatients.find(p => p.id === patId);
+          if (targetP) {
+            targetP.spo2 = document.getElementById('qSpo2').value + '%';
+            targetP.bp = document.getElementById('qBpSys').value + '/' + document.getElementById('qBpDia').value;
+            targetP.pulse = document.getElementById('qPulse').value + ' bpm';
+            targetP.sugar = document.getElementById('qSugar').value + ' mg/dL';
+            targetP.lastVisit = 'Just now';
+            if (parseFloat(document.getElementById('qSpo2').value) < 92 || parseFloat(document.getElementById('qBpSys').value) >= 160) {
+              targetP.riskLevel = 'HIGH';
+              targetP.riskClass = 'risk-high';
+            }
+          }
+          app.closeModal();
+          app.showToast('Vitals logged to encrypted local storage & synchronized with cohort roster.', 'success');
+          app.renderCurrentView();
+        ">
+          Save & Stratify Triage
+        </button>
+      `
+    );
+  }
+
+  openCreateReferralModal(patientId = "") {
+    const patient = patientId ? (this.registeredPatients.find(p=>p.id===patientId) || this.registeredPatients[0]) : this.registeredPatients[0];
+    this.openModal(
+      `<span class="material-symbols-outlined text-primary text-[22px]">add_circle</span> Initiate Frontline Referral`,
+      `
+        <div class="flex flex-col gap-base text-xs">
+          <div class="form-group">
+            <label class="form-label">Patient</label>
+            <select class="form-select text-xs" id="refModalPatient">
+              ${this.registeredPatients.map(p => `
+                <option value="${p.id}" ${p.id === patient.id ? 'selected' : ''}>
+                  ${p.name} (${p.age}y / ${p.gender}) • ABHA: ${p.abhaId}
+                </option>
+              `).join("")}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Clinical Healthcare Need / Symptoms</label>
+            <input type="text" class="form-input text-xs" id="refModalNeed" placeholder="e.g. Acute breathlessness, chest tightness, elevated BP 160/98" value="${patient.condition || ''}">
+          </div>
+
+          <div class="grid grid-cols-2 gap-xs">
+            <div class="form-group">
+              <label class="form-label">Urgency Tier</label>
+              <select class="form-select text-xs" id="refModalUrgency">
+                <option value="EMERGENCY">EMERGENCY (Immediate Transfer)</option>
+                <option value="HIGH" selected>HIGH RISK (Oxygen / Triage)</option>
+                <option value="MODERATE">MODERATE (Specialist OPD)</option>
+                <option value="ROUTINE">ROUTINE (Follow-up Check)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Target Facility</label>
+              <select class="form-select text-xs" id="refModalFacility">
+                <option value="phc-shirur">Shirur 24x7 PHC (4.2 km)</option>
+                <option value="sdh-junnar">SDH Junnar (18.2 km)</option>
+                <option value="dh-pune">Sassoon District Hospital (42 km)</option>
               </select>
             </div>
           </div>
 
           <div class="form-group">
-            <label class="form-label" data-i18n="form_village">Village / Sub-Centre Locality <span class="required-star">*</span></label>
-            <select class="form-select" id="regVillage">
-              ${SWASTHYA_DATA.villages.map(v => `
-                <option value="${v}" ${this.activePatient.village && this.activePatient.village.includes(v.split(" ")[0]) ? 'selected' : ''}>${v}</option>
-              `).join("")}
+            <label class="form-label">Transport Mode</label>
+            <select class="form-select text-xs" id="refModalTransport">
+              <option value="108">108 ALS Ambulance (Dispatch Required)</option>
+              <option value="Family">Family Transport / MSRTC Bus</option>
+              <option value="Self">Self Transit</option>
             </select>
           </div>
         </div>
-
-        <div>
-          <div class="form-group">
-            <label class="form-label" data-i18n="form_abha">ABHA Health ID (Ayushman Bharat)</label>
-            <div class="input-with-addon">
-              <span class="input-addon-prefix">ABHA</span>
-              <input type="text" class="form-input numeric-id" id="regAbha" value="${this.activePatient.abhaId || ''}" placeholder="91-4029-1823-0192">
-            </div>
-            <span class="form-hint">National 14-digit longitudinal health identifier</span>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label" data-i18n="form_phone">Contact Mobile Number</label>
-            <input type="tel" class="form-input tabular-nums" id="regPhone" value="${this.activePatient.phone || ''}" placeholder="+91 98220 14920">
-          </div>
-
-          <div class="alert alert-info" style="margin-top:var(--space-md);">
-            <span class="material-symbols-outlined text-[18px]">verified_user</span>
-            <div>
-              <strong>Frontline Data Protection:</strong> Patient records are encrypted and stored in device sandbox until secure synchronization with State Health Portal.
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  renderWizardStep2() {
-    return `
-      <div>
-        <h3 style="font-size:1.0625rem; margin-bottom:var(--space-xs);" data-i18n="vitals_title">Clinical Symptoms & Vitals</h3>
-        <p class="text-xs text-muted" style="margin-bottom:var(--space-md);">Select all applicable symptoms reported during the frontline visit:</p>
-
-        <!-- Symptoms Selection -->
-        <div class="symptom-tag-grid" id="symptomPicker">
-          ${SWASTHYA_DATA.symptomOptions.map(s => {
-            const isSelected = this.activePatient.symptoms.some(ps => ps.toLowerCase().includes(s.id));
-            return `
-              <button type="button" class="symptom-tag-btn ${isSelected ? 'is-selected' : ''}" data-symptom-id="${s.id}">
-                ${isSelected ? '✓ ' : '+ '}${s.label}
-              </button>
-            `;
-          }).join("")}
-        </div>
-
-        <!-- Vitals Input Grid -->
-        <div class="vitals-input-grid">
-          <div class="vital-input-card ${this.activePatient.vitals.spo2 < 92 ? 'is-abnormal' : ''}">
-            <div class="vital-label-row">
-              <label class="form-label" data-i18n="vitals_spo2">SpO2 (%)</label>
-              <span class="vital-status-tag ${this.activePatient.vitals.spo2 < 92 ? 'high' : 'normal'}">
-                ${this.activePatient.vitals.spo2 < 92 ? 'Low (<92%)' : 'Normal'}
-              </span>
-            </div>
-            <input type="number" class="form-input tabular-nums" id="inputSpo2" value="${this.activePatient.vitals.spo2 || 98}" min="60" max="100">
-            <span class="text-xs text-muted">Pulse Oximeter</span>
-          </div>
-
-          <div class="vital-input-card ${this.activePatient.vitals.bpSys >= 140 ? 'is-abnormal' : ''}">
-            <div class="vital-label-row">
-              <label class="form-label" data-i18n="vitals_bp">Blood Pressure (Sys/Dia)</label>
-              <span class="vital-status-tag ${this.activePatient.vitals.bpSys >= 140 ? 'high' : 'normal'}">
-                ${this.activePatient.vitals.bpSys >= 140 ? 'Elevated' : 'Normal'}
-              </span>
-            </div>
-            <div class="flex gap-xs">
-              <input type="number" class="form-input tabular-nums" id="inputBpSys" value="${this.activePatient.vitals.bpSys || 120}" placeholder="Sys">
-              <span style="align-self:center; font-weight:700;">/</span>
-              <input type="number" class="form-input tabular-nums" id="inputBpDia" value="${this.activePatient.vitals.bpDia || 80}" placeholder="Dia">
-            </div>
-            <span class="text-xs text-muted">mmHg</span>
-          </div>
-
-          <div class="vital-input-card ${this.activePatient.vitals.pulse > 100 ? 'is-abnormal' : ''}">
-            <div class="vital-label-row">
-              <label class="form-label" data-i18n="vitals_pulse">Pulse Rate (bpm)</label>
-              <span class="vital-status-tag ${this.activePatient.vitals.pulse > 100 ? 'high' : 'normal'}">
-                ${this.activePatient.vitals.pulse > 100 ? 'High' : 'Normal'}
-              </span>
-            </div>
-            <input type="number" class="form-input tabular-nums" id="inputPulse" value="${this.activePatient.vitals.pulse || 72}">
-            <span class="text-xs text-muted">Beats per min</span>
-          </div>
-
-          <div class="vital-input-card">
-            <div class="vital-label-row">
-              <label class="form-label" data-i18n="vitals_temp">Temperature (°F)</label>
-              <span class="vital-status-tag normal">Clinical</span>
-            </div>
-            <input type="text" class="form-input tabular-nums" id="inputTemp" value="${this.activePatient.vitals.temp || '98.6'}">
-            <span class="text-xs text-muted">Digital thermometer</span>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  /* ==========================================================================
-     RENDERERS: TRIAGE EVALUATION VIEW
-     ========================================================================== */
-  renderTriageView() {
-    const triageResult = TriageEngine.evaluateVitals(this.activePatient.vitals, this.activePatient.symptoms);
-
-    return `
-      <div class="page-header">
-        <div class="page-title-group">
-          <h1>Clinical Triage & Risk Evaluation</h1>
-          <p>Frontline decision support for: <strong>${this.activePatient.name}</strong> (${this.activePatient.age}y / ${this.activePatient.gender})</p>
-        </div>
-        <button class="btn btn-secondary btn-sm" onclick="app.navigateTo('registration')">Edit Vitals</button>
-      </div>
-
-      <!-- Triage Card with Color-Coded Left Border -->
-      <div class="triage-card ${triageResult.borderClass}" style="margin-bottom:var(--space-xl);">
-        <div class="flex items-center justify-between" style="margin-bottom:var(--space-md);">
-          <div>
-            <span class="text-xs text-muted uppercase font-bold">Evaluated Clinical Stratification</span>
-            <h2 style="font-size:1.5rem; margin-top:2px;">${triageResult.level} RISK</h2>
-          </div>
-          <span class="risk-chip ${triageResult.riskClass}">${triageResult.level} RISK</span>
-        </div>
-
-        <div class="view-grid-2col" style="margin-bottom:var(--space-lg);">
-          <div>
-            <h4 style="font-size:0.9375rem; margin-bottom:var(--space-sm);" data-i18n="triage_indicators_detected">Risk Indicators Detected</h4>
-            <ul style="padding-left:20px; font-size:0.875rem; line-height:1.5; color:var(--color-neutral);">
-              ${triageResult.indicators.map(ind => `<li><strong>${ind}</strong></li>`).join("")}
-            </ul>
-          </div>
-
-          <div>
-            <h4 style="font-size:0.9375rem; margin-bottom:var(--space-sm);" data-i18n="triage_recommended_action">Recommended Continuity Action</h4>
-            <div class="alert alert-warning" style="font-size:0.875rem;">
-              ${triageResult.recommendedAction}
-            </div>
-          </div>
-        </div>
-
-        <!-- Mandatory Civic Medical Disclaimer -->
-        <div class="clinical-disclaimer">
-          <span class="material-symbols-outlined text-primary text-[20px]">policy</span>
-          <span data-i18n="triage_disclaimer">${triageResult.disclaimer}</span>
-        </div>
-      </div>
-
-      <!-- Action Panel: Move to Facility Match -->
-      <div class="card flex items-center justify-between">
-        <div>
-          <h4>Ready for Inter-Facility Referral</h4>
-          <p class="text-xs text-muted">Locate suitable public healthcare centers matching oxygen and emergency requirements.</p>
-        </div>
-        <button class="btn btn-primary" id="proceedToFacilityBtn">
-          Find Matching Healthcare Facility →
+      `,
+      `
+        <button class="btn btn-secondary btn-sm" onclick="app.closeModal()">Cancel</button>
+        <button class="btn btn-primary btn-sm" onclick="
+          const patId = document.getElementById('refModalPatient').value;
+          const p = app.registeredPatients.find(item => item.id === patId) || app.registeredPatients[0];
+          const newRef = {
+            id: 'ref-' + Date.now(),
+            patientId: p.id,
+            patientName: p.name,
+            age: p.age,
+            gender: p.gender,
+            village: p.village,
+            abhaId: p.abhaId,
+            phone: p.phone,
+            referralType: 'Clinical Referral',
+            referralCategory: 'general',
+            urgency: document.getElementById('refModalUrgency').value,
+            urgencyClass: document.getElementById('refModalUrgency').value === 'EMERGENCY' ? 'risk-emergency' : (document.getElementById('refModalUrgency').value === 'HIGH' ? 'risk-high' : 'risk-moderate'),
+            clinicalNeed: document.getElementById('refModalNeed').value || 'Referred for specialist evaluation',
+            facilityId: document.getElementById('refModalFacility').value,
+            facilityName: document.getElementById('refModalFacility').options[document.getElementById('refModalFacility').selectedIndex].text.split(' (')[0],
+            doctorAssigned: 'Dr. A. Kulkarni',
+            transportMode: document.getElementById('refModalTransport').value === '108' ? '108 ALS Ambulance' : 'Family Assisted',
+            ambulanceReg: document.getElementById('refModalTransport').value === '108' ? 'MH-12-CZ-9812' : null,
+            ambulanceEta: '15 mins',
+            status: document.getElementById('refModalTransport').value === '108' ? 'In Transit (108 Dispatched)' : 'Appointment Confirmed',
+            statusStep: 4,
+            statusClass: 'status-pending',
+            slipToken: 'REF-2026-PHC-' + Math.floor(1000 + Math.random() * 9000),
+            createdAt: 'Just now',
+            notes: 'Created by ASHA Sunita More via frontline mobile workstation.'
+          };
+          if (!SWASTHYA_DATA.ashaReferrals) SWASTHYA_DATA.ashaReferrals = [];
+          SWASTHYA_DATA.ashaReferrals.unshift(newRef);
+          if (window.offlineStore) {
+            window.offlineStore.saveRecord('asha_referral', newRef);
+          }
+          app.closeModal();
+          app.showToast('Referral created for ' + p.name + '! Token issued: ' + newRef.slipToken, 'success');
+          app.navigateTo('referrals');
+        ">
+          Confirm & Issue Referral Slip
         </button>
-      </div>
-    `;
+      `
+    );
+  }
+
+  openAddTaskModal() {
+    this.openModal(
+      `<span class="material-symbols-outlined text-primary text-[22px]">add_task</span> Add Daily Field Task`,
+      `
+        <div class="flex flex-col gap-base text-xs">
+          <div class="form-group">
+            <label class="form-label">Task Title</label>
+            <input type="text" class="form-input text-xs" id="taskTitleInput" placeholder="e.g. Post-Discharge BP check for Maruti Chavan">
+          </div>
+          <div class="grid grid-cols-2 gap-xs">
+            <div class="form-group">
+              <label class="form-label">Task Type</label>
+              <select class="form-select text-xs" id="taskTypeSelect">
+                <option>Home Visit (Follow-up)</option>
+                <option>Maternal ANC Visit</option>
+                <option>Village Screening Camp</option>
+                <option>IFA / Jan Aushadhi Dispensing</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Priority</label>
+              <select class="form-select text-xs" id="taskPrioritySelect">
+                <option value="High Priority">High Priority</option>
+                <option value="Routine" selected>Routine</option>
+                <option value="Scheduled">Scheduled</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Village / Locality</label>
+            <input type="text" class="form-input text-xs" id="taskVillageInput" value="Talwade (Sector 4)">
+          </div>
+        </div>
+      `,
+      `
+        <button class="btn btn-secondary btn-sm" onclick="app.closeModal()">Cancel</button>
+        <button class="btn btn-primary btn-sm" onclick="
+          const title = document.getElementById('taskTitleInput').value;
+          if (title) {
+            const newTask = {
+              id: 'task-' + Date.now(),
+              title: title,
+              type: document.getElementById('taskTypeSelect').value,
+              village: document.getElementById('taskVillageInput').value,
+              priority: document.getElementById('taskPrioritySelect').value,
+              priorityClass: document.getElementById('taskPrioritySelect').value === 'High Priority' ? 'risk-high' : 'risk-moderate',
+              dueDate: 'Today, 04:00 PM',
+              status: 'Pending'
+            };
+            if (!SWASTHYA_DATA.ashaTasks) SWASTHYA_DATA.ashaTasks = [];
+            SWASTHYA_DATA.ashaTasks.unshift(newTask);
+            app.closeModal();
+            app.showToast('Field task added to schedule!', 'success');
+            app.renderCurrentView();
+          }
+        ">
+          Add Task
+        </button>
+      `
+    );
   }
 
   /* ==========================================================================
-     RENDERERS: FACILITY FINDER
+     SHARED FACILITY FINDER & DEMO HELPERS
      ========================================================================== */
   renderFacilitiesView() {
+    const isPatient = this.currentRole === "PATIENT";
+    const isAdmin = this.currentRole === "ADMIN";
+
     return `
       <div class="page-header">
         <div class="page-title-group">
-          <h1 data-i18n="nav_facilities">Public Healthcare Facility Finder</h1>
-          <p>Sorted by distance and specialized clinical capabilities (Oxygen, Lab, ICU)</p>
+          <h1 data-i18n="nav_facilities">Public Healthcare Facilities Directory</h1>
+          <p>Sorted by distance and specialized clinical capabilities (Oxygen, ICU, Emergency)</p>
         </div>
-        <span class="badge-role badge-role-asha">Frontline Referral Mode</span>
+        <span class="badge-role ${isPatient ? 'badge-role-patient' : (isAdmin ? 'badge-role-admin' : 'badge-role-asha')}">
+          ${isPatient ? 'Citizen Facility View' : (isAdmin ? 'Admin Resource Grid' : 'Frontline Referral Mode')}
+        </span>
       </div>
 
       <div class="facility-list">
@@ -1194,398 +1696,14 @@ class SwasthyaApp {
               <div class="flex items-center justify-between" style="margin-top:var(--space-xs); padding-top:var(--space-sm); border-top:1px solid var(--surface-subtle);">
                 <span class="text-xs text-muted">Emergency Dispatch: <strong>${f.contact}</strong></span>
                 <button class="btn ${isSelected ? 'btn-primary' : 'btn-secondary'} btn-sm select-facility-btn" data-facility-id="${f.id}">
-                  ${isSelected ? '✓ Facility Selected' : 'Select Facility for Referral'}
+                  ${isSelected ? '✓ Selected' : (isPatient ? 'View Doctors at Facility' : 'Select Facility')}
                 </button>
               </div>
             </div>
           `;
         }).join("")}
       </div>
-
-      <div class="card flex items-center justify-between" style="margin-top:var(--space-xl);">
-        <div>
-          <h4>Generate Digital Referral Token</h4>
-          <p class="text-xs text-muted">Selected Destination: <strong>${this.selectedFacility ? this.selectedFacility.name : 'None'}</strong></p>
-        </div>
-        <button class="btn btn-referral btn-lg" id="generateReferralBtn">
-          Confirm & Issue Referral Token →
-        </button>
-      </div>
     `;
-  }
-
-  /* ==========================================================================
-     RENDERERS: REFERRAL TRACKER & TIMELINE
-     ========================================================================== */
-  renderReferralsView() {
-    return `
-      <div class="page-header">
-        <div class="page-title-group">
-          <h1 data-i18n="nav_referrals">Referral Tracking & Inter-Facility Transfer</h1>
-          <p>Real-time chain of custody from Sub-Centre to Primary Health Centre & District Hospital</p>
-        </div>
-        <span class="risk-chip risk-high">HIGH RISK ESCALATION</span>
-      </div>
-
-      <!-- Referral Packet Card -->
-      <div class="card" style="margin-bottom:var(--space-xl);">
-        <div class="card-header">
-          <div>
-            <span class="badge-role badge-role-anm">Active Transfer Token: REF-2026-SHIRUR-0982</span>
-            <h2 style="font-size:1.25rem; margin-top:4px;">${this.activePatient.name} (Age: 62)</h2>
-          </div>
-          <span class="sync-status-pill is-online">● State Network Synced</span>
-        </div>
-
-        <!-- Signature Journey Stepper (Referral Stage Active) -->
-        ${this.renderJourneyStepper(5)}
-
-        <div class="view-grid-2col" style="margin-top:var(--space-lg); background-color:var(--surface-subtle); padding:var(--space-md); border-radius:var(--radius-md);">
-          <div>
-            <h4 class="text-sm text-muted">Referring Cadre</h4>
-            <p><strong>Sunita More (ASHA)</strong><br><span class="text-xs text-muted">Talwade Sub-Centre</span></p>
-            <div style="margin-top:var(--space-sm);">
-              <h4 class="text-sm text-muted">Reason for Referral</h4>
-              <p class="text-sm text-bold" style="color:var(--risk-high-fg);">Hypoxia (SpO2 92%) + Hypertension (160/98 mmHg)</p>
-            </div>
-          </div>
-          <div>
-            <h4 class="text-sm text-muted">Destination Medical Facility</h4>
-            <p><strong>${this.selectedFacility ? this.selectedFacility.name : 'Shirur Primary Health Centre'}</strong><br><span class="text-xs text-muted">In-Charge: Dr. A. Kulkarni</span></p>
-            <div style="margin-top:var(--space-sm);">
-              <h4 class="text-sm text-muted">Patient Transit Status</h4>
-              <p class="text-sm"><strong>En route via 108 Ambulance (ETA: 10 Mins)</strong></p>
-            </div>
-          </div>
-        </div>
-
-        <div class="flex items-center justify-between" style="margin-top:var(--space-lg);">
-          <button class="btn btn-secondary btn-sm" onclick="app.navigateTo('timeline')">
-            View Longitudinal Record (ABHA)
-          </button>
-          <button class="btn btn-primary btn-sm" onclick="app.simulateDoctorConsult()">
-            Simulate Doctor Reception at PHC →
-          </button>
-        </div>
-      </div>
-    `;
-  }
-
-  renderTimelineView() {
-    return `
-      <div class="page-header">
-        <div class="page-title-group">
-          <h1>Longitudinal Patient Health Record</h1>
-          <p>ABHA ID: <span class="numeric-id">91-4029-1823-0192</span> • <strong>${this.activePatient.name}</strong></p>
-        </div>
-        <button class="btn btn-secondary btn-sm" onclick="app.navigateTo('dashboard')">Back to Dashboard</button>
-      </div>
-
-      <div class="card" style="margin-bottom:var(--space-xl);">
-        <div class="health-timeline">
-          ${this.activePatient.timeline.map(entry => `
-            <div class="timeline-entry ${entry.role === 'Doctor' ? 'is-doctor' : ''}">
-              <div class="timeline-bullet"></div>
-              <div class="timeline-content">
-                <div class="flex items-center justify-between" style="margin-bottom:4px;">
-                  <span class="timeline-date">${entry.date}</span>
-                  <span class="badge-role ${entry.badge}">${entry.role}</span>
-                </div>
-                <h4>${entry.stage}</h4>
-                <p class="text-xs text-muted" style="margin-bottom:6px;">Provider: ${entry.provider}</p>
-                <p class="text-sm">${entry.notes}</p>
-              </div>
-            </div>
-          `).join("")}
-        </div>
-      </div>
-    `;
-  }
-
-  renderPatientsListView() {
-    return `
-      <div class="page-header">
-        <div class="page-title-group">
-          <h1 data-i18n="nav_patients">Village Health Registry</h1>
-          <p>Talwade, Pabal & Shirur Cluster Population Records</p>
-        </div>
-        <button class="btn btn-primary btn-sm" onclick="app.navigateTo('registration')">
-          + Register New Patient
-        </button>
-      </div>
-
-      <div class="card">
-        <div class="table-container">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Patient Name</th>
-                <th>Age/Gender</th>
-                <th>ABHA Health ID</th>
-                <th>Risk Status</th>
-                <th>Last Vitals</th>
-                <th>Assigned Village</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${this.registeredPatients.map(p => `
-                <tr>
-                  <td><strong>${p.name}</strong></td>
-                  <td>${p.age}y / ${p.gender}</td>
-                  <td><span class="abha-badge">${p.abhaId}</span></td>
-                  <td><span class="risk-chip ${p.riskClass}">${p.riskLevel}</span></td>
-                  <td><span class="text-xs">SpO2: ${p.spo2} • BP: ${p.bp}</span></td>
-                  <td>${p.village}</td>
-                  <td>
-                    <button class="btn btn-secondary btn-sm" onclick="app.inspectPatient('${p.id}')">View Journey</button>
-                  </td>
-                </tr>
-              `).join("")}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    `;
-  }
-
-  /* ==========================================================================
-     RENDERERS: DOCTOR & ADMIN DASHBOARDS (Stitch Screen 0752cfe5)
-     ========================================================================== */
-  renderDoctorDashboard() {
-    return `
-      <div class="page-header">
-        <div class="page-title-group">
-          <h1>Medical Officer Clinical Station</h1>
-          <p>Shirur Primary Health Centre (PHC) • Dr. A. Kulkarni, MBBS</p>
-        </div>
-        <span class="badge-role badge-role-doctor">PHC Consultation Mode</span>
-      </div>
-
-      <div class="doctor-consult-layout">
-        <!-- Patient Queue -->
-        <div class="view-sidebar-pane">
-          <h3 style="font-size:1rem; margin-bottom:var(--space-sm);">Tele-Triage Queue</h3>
-          <div class="patient-queue-list">
-            ${SWASTHYA_DATA.doctorQueue.map((p, idx) => `
-              <div class="queue-patient-item ${idx === 0 ? 'is-selected' : ''}">
-                <div class="flex items-center justify-between">
-                  <strong>${p.name}</strong>
-                  <span class="risk-chip ${p.riskClass}" style="font-size:0.6875rem;">${p.riskLevel}</span>
-                </div>
-                <p class="text-xs text-muted">${p.age}y / ${p.gender} • ${p.village}</p>
-                <p class="text-xs text-bold" style="color:var(--color-secondary); margin-top:4px;">${p.referralReason}</p>
-                <span class="text-xs text-muted" style="margin-top:4px; display:block;">Referred by: ${p.referredBy}</span>
-              </div>
-            `).join("")}
-          </div>
-        </div>
-
-        <!-- Clinical Action Pane -->
-        <div class="clinical-notes-box">
-          <div class="flex items-center justify-between" style="margin-bottom:var(--space-md); padding-bottom:var(--space-sm); border-bottom:1px solid var(--border-structural);">
-            <div>
-              <span class="badge-role badge-role-asha">Incoming Frontline Transfer</span>
-              <h2 style="font-size:1.375rem; margin-top:2px;">Ramesh Patil (62y M)</h2>
-              <span class="text-xs text-muted">ABHA: <span class="numeric-id">91-4029-1823-0192</span></span>
-            </div>
-            <span class="risk-chip risk-high">HIGH RISK</span>
-          </div>
-
-          <!-- Doctor View Journey Stepper (Doctor Consult Active) -->
-          ${this.renderJourneyStepper(6)}
-
-          <div class="alert alert-warning" style="margin:var(--space-md) 0;">
-            <strong>Frontline Vitals at Home:</strong> SpO2: 92% (Hypoxic), BP: 160/98 mmHg, Pulse: 104 bpm, Temp: 101.4°F.<br>
-            <em>Assessment: Acute exacerbation of COPD / Suspected lower respiratory tract infection.</em>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Doctor's Clinical Action & Tele-Prescription</label>
-            <textarea class="form-textarea" id="docNotes" placeholder="Enter clinical orders...">High-flow O2 initiated at 4 L/min in Oxygen Bay #4. Nebulization with Salbutamol 2.5mg given. Re-evaluating SpO2 in 30 mins. ASHA Sunita More notified for post-discharge home monitoring.</textarea>
-          </div>
-
-          <div class="flex items-center justify-between" style="margin-top:var(--space-lg);">
-            <button class="btn btn-secondary" onclick="app.setRole('ASHA')">
-              ← Switch back to ASHA Cadre
-            </button>
-            <button class="btn btn-primary" id="confirmConsultBtn">
-              Save Clinical Note & Schedule ASHA Follow-up
-            </button>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  renderAdminDashboard() {
-    return `
-      <div class="page-header">
-        <div class="page-title-group">
-          <h1>District Healthcare Administration Overview</h1>
-          <p>Pune District Public Health Surveillance Network • Shirur & Junnar Clusters</p>
-        </div>
-        <span class="badge-role badge-role-admin">Admin Portal</span>
-      </div>
-
-      <div class="metrics-grid">
-        <div class="metric-tile">
-          <div class="metric-tile-top">
-            <span class="metric-tile-label">Total Population Registered</span>
-            <div class="metric-tile-icon is-green"><span class="material-symbols-outlined text-[18px]">groups</span></div>
-          </div>
-          <div class="metric-tile-value">1,248</div>
-          <div class="metric-tile-footer text-muted">Across 24 Sub-Centres</div>
-        </div>
-        <div class="metric-tile">
-          <div class="metric-tile-top">
-            <span class="metric-tile-label">High-Risk Escalations</span>
-            <div class="metric-tile-icon is-orange"><span class="material-symbols-outlined text-[18px]">warning</span></div>
-          </div>
-          <div class="metric-tile-value text-bold" style="color:var(--risk-high-fg);">7</div>
-          <div class="metric-tile-footer" style="color:var(--risk-high-fg);">All linked to PHC Oxygen beds</div>
-        </div>
-        <div class="metric-tile">
-          <div class="metric-tile-top">
-            <span class="metric-tile-label">Active Transfer Referrals</span>
-            <div class="metric-tile-icon is-blue"><span class="material-symbols-outlined text-[18px]">swap_horiz</span></div>
-          </div>
-          <div class="metric-tile-value">12</div>
-          <div class="metric-tile-footer text-muted">Average transit time: 14 mins</div>
-        </div>
-        <div class="metric-tile">
-          <div class="metric-tile-top">
-            <span class="metric-tile-label">Offline-to-Cloud Sync Rate</span>
-            <div class="metric-tile-icon is-green"><span class="material-symbols-outlined text-[18px]">cloud_done</span></div>
-          </div>
-          <div class="metric-tile-value">99.4%</div>
-          <div class="metric-tile-footer text-muted">Zero record loss</div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-header">
-          <h3 class="card-title">Facility Readiness & Oxygen Capacity</h3>
-          <span class="badge-role badge-role-admin">District Civil Network</span>
-        </div>
-        <div class="table-container">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Facility Name</th>
-                <th>Type</th>
-                <th>Staffing Status</th>
-                <th>Oxygen Concentrators</th>
-                <th>Available Beds</th>
-                <th>Referral Load</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${SWASTHYA_DATA.facilities.map(f => `
-                <tr>
-                  <td><strong>${f.name}</strong></td>
-                  <td>${f.type}</td>
-                  <td>MO On Duty: ${f.doctorInCharge}</td>
-                  <td><span class="tag-capability">✓ Active</span></td>
-                  <td><strong>${f.bedCapacity}</strong></td>
-                  <td><span class="facility-status-pill ${f.statusClass}">${f.availability}</span></td>
-                </tr>
-              `).join("")}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    `;
-  }
-
-  /* ==========================================================================
-     EVENT BINDINGS & DEMO RUNNERS
-     ========================================================================== */
-  bindDashboardEvents() {
-    const quickRegBtn = document.getElementById("quickRegisterBtn");
-    if (quickRegBtn) {
-      quickRegBtn.addEventListener("click", () => {
-        this.activePatient = {
-          id: "pat_" + Date.now(),
-          name: "",
-          age: "",
-          gender: "Male",
-          village: "Talwade (Sector 4)",
-          abhaId: "91-" + Math.floor(1000 + Math.random() * 9000) + "-" + Math.floor(1000 + Math.random() * 9000) + "-4021",
-          phone: "+91 9",
-          symptoms: [],
-          vitals: { spo2: 98, bpSys: 120, bpDia: 80, pulse: 72, temp: "98.6" },
-          timeline: []
-        };
-        this.wizardStep = 1;
-        this.navigateTo("registration");
-      });
-    }
-  }
-
-  bindWizardEvents() {
-    const nextBtn = document.getElementById("wizardNextBtn");
-    const backBtn = document.getElementById("wizardBackBtn");
-
-    if (nextBtn) {
-      nextBtn.addEventListener("click", () => {
-        if (this.wizardStep === 1) {
-          const nameInput = document.getElementById("regName");
-          const ageInput = document.getElementById("regAge");
-          if (!nameInput.value.trim()) {
-            this.showToast("Please enter the patient's full name", "warning");
-            return;
-          }
-          this.activePatient.name = nameInput.value.trim();
-          this.activePatient.age = ageInput.value.trim() || 40;
-          this.activePatient.gender = document.getElementById("regGender").value;
-          this.activePatient.village = document.getElementById("regVillage").value;
-          this.activePatient.abhaId = document.getElementById("regAbha").value;
-          this.activePatient.phone = document.getElementById("regPhone").value;
-
-          this.wizardStep = 2;
-          this.renderCurrentView();
-        } else if (this.wizardStep === 2) {
-          this.activePatient.vitals.spo2 = parseFloat(document.getElementById("inputSpo2").value) || 98;
-          this.activePatient.vitals.bpSys = parseFloat(document.getElementById("inputBpSys").value) || 120;
-          this.activePatient.vitals.bpDia = parseFloat(document.getElementById("inputBpDia").value) || 80;
-          this.activePatient.vitals.pulse = parseFloat(document.getElementById("inputPulse").value) || 72;
-          this.activePatient.vitals.temp = document.getElementById("inputTemp").value || "98.6";
-
-          window.offlineStore.saveRecord("patient_assessment", this.activePatient);
-          this.navigateTo("triage");
-        }
-      });
-    }
-
-    if (backBtn) {
-      backBtn.addEventListener("click", () => {
-        if (this.wizardStep > 1) {
-          this.wizardStep--;
-          this.renderCurrentView();
-        }
-      });
-    }
-
-    document.querySelectorAll(".symptom-tag-btn").forEach(btn => {
-      btn.addEventListener("click", e => {
-        const symptomId = e.currentTarget.getAttribute("data-symptom-id");
-        const idx = this.activePatient.symptoms.indexOf(symptomId);
-        if (idx > -1) {
-          this.activePatient.symptoms.splice(idx, 1);
-        } else {
-          this.activePatient.symptoms.push(symptomId);
-        }
-        this.renderCurrentView();
-      });
-    });
-  }
-
-  bindTriageEvents() {
-    const proceedBtn = document.getElementById("proceedToFacilityBtn");
-    if (proceedBtn) {
-      proceedBtn.addEventListener("click", () => this.navigateTo("facilities"));
-    }
   }
 
   bindFacilityEvents() {
@@ -1595,80 +1713,21 @@ class SwasthyaApp {
         const fac = SWASTHYA_DATA.facilities.find(f => f.id === facId);
         if (fac) {
           this.selectedFacility = fac;
-          this.renderCurrentView();
-          this.showToast(`Selected: ${fac.name}`, "info");
+          if (this.currentRole === "PATIENT") {
+            this.showToast(`Selected ${fac.name}. Viewing available doctors...`, "info");
+            this.navigateTo("find-doctor");
+          } else {
+            this.renderCurrentView();
+            this.showToast(`Selected: ${fac.name}`, "info");
+          }
         }
       });
-    });
-
-    const genRefBtn = document.getElementById("generateReferralBtn");
-    if (genRefBtn) {
-      genRefBtn.addEventListener("click", () => {
-        window.offlineStore.saveRecord("facility_referral", {
-          patient: this.activePatient,
-          facility: this.selectedFacility
-        });
-        this.showToast("Referral Token Generated and Sent to PHC!", "success");
-        this.navigateTo("referrals");
-      });
-    }
-  }
-
-  bindDoctorEvents() {
-    const confirmBtn = document.getElementById("confirmConsultBtn");
-    if (confirmBtn) {
-      confirmBtn.addEventListener("click", () => {
-        this.showToast("Consultation saved & Follow-up assigned to ASHA Sunita More!", "success");
-        setTimeout(() => {
-          this.setRole("ASHA");
-          this.navigateTo("timeline");
-        }, 1200);
-      });
-    }
-  }
-
-  bindPatientPortalEvents() {
-    // Specific patient actions handled via instance methods
-  }
-
-  copyAbhaId(id) {
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(id).then(() => {
-        this.showToast(`ABHA ID copied: ${id}`, "success");
-      });
-    } else {
-      this.showToast(`ABHA ID: ${id}`, "info");
-    }
-  }
-
-  openAbhaModal() {
-    this.showToast("Downloading verified Ayushman Bharat (ABHA) QR Card PDF...", "success");
-  }
-
-  requestPatientSync() {
-    this.showToast("Requesting record sync with ABDM National Health Grid...", "info");
-    setTimeout(() => {
-      this.showToast("Citizen health records synchronized with Shirur PHC!", "success");
-    }, 1000);
-  }
-
-  requestJanAushadhiRefill() {
-    this.showToast("Jan Aushadhi Subsidized Refill Requested for Amlodipine 5mg at Shirur Hub!", "success");
-  }
-
-  notifyAsha() {
-    this.showToast("Direct notification sent to ASHA Sunita More for home follow-up visit!", "success");
-  }
-
-  triggerSyncSimulation() {
-    window.offlineStore.triggerSync(count => {
-      this.showToast(`Cloud Sync Complete • ${count} record(s) synchronized with State Health Portal`, "success");
     });
   }
 
   runDemoJourney() {
     this.activePatient = JSON.parse(JSON.stringify(SWASTHYA_DATA.demoPatient));
-    this.selectedFacility = SWASTHYA_DATA.facilities[0]; // Shirur PHC
+    this.selectedFacility = SWASTHYA_DATA.facilities[0];
     this.showToast("Loaded Patient File: Ramesh Patil (62y, High Risk)", "info");
     this.navigateTo("triage");
   }
@@ -1697,6 +1756,32 @@ class SwasthyaApp {
       }
     }
     this.navigateTo("timeline");
+  }
+
+  copyAbhaId(id) {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(id).then(() => {
+        this.showToast(`ABHA ID copied: ${id}`, "success");
+      });
+    } else {
+      this.showToast(`ABHA ID: ${id}`, "info");
+    }
+  }
+
+  openAbhaModal() {
+    this.showToast("Downloading verified Ayushman Bharat (ABHA) QR Card PDF...", "success");
+  }
+
+  requestJanAushadhiRefill() {
+    this.showToast("Jan Aushadhi Subsidized Refill Requested for Amlodipine 5mg at Shirur Hub!", "success");
+  }
+
+  triggerSyncSimulation() {
+    if (window.offlineStore) {
+      window.offlineStore.triggerSync(count => {
+        this.showToast(`Cloud Sync Complete • ${count} record(s) synchronized with State Health Portal`, "success");
+      });
+    }
   }
 
   showToast(message, type = "info") {
@@ -1748,9 +1833,253 @@ class SwasthyaApp {
       toast.style.transform = "translateY(10px)";
     }, 3500);
   }
+
+  /* ==========================================================================
+     UNIFIED ROLE-DETECTION LOGIN & AUTHENTICATION HANDLERS
+     ========================================================================== */
+  initAuthPage() {
+    this.detectedAuthRole = "PATIENT";
+    this.currentAuthMode = "otp";
+    const input = document.getElementById("identifier-input");
+    if (input && input.value) {
+      this.handleIdentifierInput(input.value);
+    }
+  }
+
+  detectRole(rawVal) {
+    const val = (rawVal || "").trim();
+    if (!val) {
+      return {
+        role: null,
+        label: "Awaiting ID",
+        icon: "search",
+        pillClass: "",
+        cardId: null,
+        helper: "Type an identifier to auto-match your cadence profile",
+        ctaText: "Authenticate & Enter Workspace"
+      };
+    }
+
+    const lower = val.toLowerCase();
+
+    // 1. Doctor / Medical Officer: MMC/NMC/SMC Registration Number or 'Dr.' prefix
+    if (/^(nmc|smc|mci|dr\b|mmc|doc)/i.test(lower) || lower.startsWith("dr.") || lower.includes("2012-08-2940") || lower.startsWith("dr ")) {
+      return {
+        role: "DOCTOR",
+        label: "Doctor (NMC/MMC)",
+        icon: "stethoscope",
+        pillClass: "is-doctor",
+        cardId: "card-doctor",
+        helper: "Matched Medical Officer / Physician (e.g. MMC-2012-08-2940)",
+        ctaText: "Enter Doctor Clinical Station"
+      };
+    }
+
+    // 2. ASHA / ANM Frontline Worker ID
+    if (/^(asha|anm)/i.test(lower) || lower.includes("asha-") || lower.includes("anm-") || lower.includes("2409")) {
+      return {
+        role: "ASHA",
+        label: "ASHA Worker (NHM)",
+        icon: "diversity_1",
+        pillClass: "is-asha",
+        cardId: "card-asha",
+        helper: "Matched ASHA / ANM Frontline Healthcare Worker (e.g. ASHA-2409)",
+        ctaText: "Access ASHA Field Workspace"
+      };
+    }
+
+    // 3. Health Admin / CMO: Govt or NIC Email or Admin keyword
+    if (lower.includes("@") || lower.includes("gov.in") || lower.includes("nic.in") || lower.includes("admin") || lower.includes("cmo") || lower.includes("dho") || lower.includes("mohfw")) {
+      return {
+        role: "ADMIN",
+        label: "Health Admin (MoHFW)",
+        icon: "shield_person",
+        pillClass: "is-admin",
+        cardId: "card-admin",
+        helper: "Matched District / State Public Health Administrator",
+        ctaText: "Access Health Admin Console"
+      };
+    }
+
+    // 4. Citizen / Patient: ABHA ID (14 digits with or without hyphens) or 10-digit mobile number or standard digits
+    if (/^(\d{2}-?\d{4}-?\d{4}-?\d{4}|\d{10}|\d{6,})$/.test(val.replace(/\s+/g, '')) || lower.startsWith("abha") || lower.includes("patil")) {
+      return {
+        role: "PATIENT",
+        label: "Citizen / ABHA Patient",
+        icon: "person",
+        pillClass: "is-patient",
+        cardId: "card-citizen",
+        helper: "Matched Citizen / ABHA Beneficiary Profile",
+        ctaText: "Enter Citizen Health Portal"
+      };
+    }
+
+    // Default fallback to Citizen / Patient
+    return {
+      role: "PATIENT",
+      label: "Citizen Access",
+      icon: "person",
+      pillClass: "is-patient",
+      cardId: "card-citizen",
+      helper: "Resolving as Citizen ABHA / Mobile access",
+      ctaText: "Authenticate as Citizen"
+    };
+  }
+
+  handleIdentifierInput(val) {
+    const detection = this.detectRole(val);
+    this.detectedAuthRole = detection.role || "PATIENT";
+
+    // Update pill
+    const rolePill = document.getElementById("role-pill");
+    if (rolePill) {
+      rolePill.className = `role-pill-detector ${detection.pillClass || ''}`;
+      rolePill.innerHTML = `
+        <span class="material-symbols-outlined text-[14px]">${detection.icon}</span>
+        <span id="role-pill-text">${detection.label}</span>
+      `;
+    }
+
+    // Update clear button
+    const clearBtn = document.getElementById("input-clear-btn");
+    if (clearBtn) {
+      clearBtn.classList.toggle("hidden", !(val && val.length > 0));
+    }
+
+    // Update helper detector text
+    const helperEl = document.getElementById("helper-detector");
+    if (helperEl) {
+      helperEl.textContent = detection.helper;
+    }
+
+    // Update submit button text
+    const ctaText = document.getElementById("login-cta-text");
+    if (ctaText) {
+      ctaText.textContent = detection.ctaText;
+    }
+
+    // Highlight matching cadre card
+    document.querySelectorAll(".cadre-card").forEach(card => {
+      card.classList.remove("is-selected");
+    });
+    if (detection.cardId) {
+      const card = document.getElementById(detection.cardId);
+      if (card) {
+        card.classList.add("is-selected");
+      }
+    }
+  }
+
+  clearIdentifierInput() {
+    const input = document.getElementById("identifier-input");
+    if (input) {
+      input.value = "";
+      input.focus();
+    }
+    this.handleIdentifierInput("");
+  }
+
+  setAuthMode(mode) {
+    this.currentAuthMode = mode;
+
+    // Update tab active classes
+    document.querySelectorAll(".auth-mode-tab").forEach(tab => {
+      tab.classList.toggle("is-active", tab.getAttribute("data-mode") === mode);
+    });
+
+    const area = document.getElementById("credential-payload-area");
+    if (!area) return;
+
+    if (mode === "otp") {
+      area.innerHTML = `
+        <label class="block text-xs font-bold text-neutral" for="credential-input" id="credential-label">
+          Enter 6-digit OTP Code
+        </label>
+        <div class="relative">
+          <input class="form-input text-sm w-full font-numeric tracking-widest text-center" id="credential-input" maxlength="6" placeholder="••••••" type="text" value="940128">
+          <button class="absolute right-3 top-2.5 text-primary text-xs font-bold hover:underline" id="resend-btn" type="button" onclick="app.triggerAuthResend()">
+            Get OTP
+          </button>
+        </div>
+      `;
+    } else if (mode === "pin") {
+      area.innerHTML = `
+        <label class="block text-xs font-bold text-neutral" for="credential-input" id="credential-label">
+          Enter 4-digit Security MPIN
+        </label>
+        <div class="relative">
+          <input class="form-input text-sm w-full font-numeric tracking-widest text-center" id="credential-input" maxlength="4" placeholder="••••" type="password" value="2409">
+          <button class="absolute right-3 top-2.5 text-secondary text-xs font-bold hover:underline" type="button" onclick="app.showToast('Reset link sent to registered mobile', 'info')">
+            Forgot MPIN?
+          </button>
+        </div>
+      `;
+    } else if (mode === "bio") {
+      area.innerHTML = `
+        <div class="bg-surface-container-low p-4 rounded-xl border border-dashed border-primary text-center flex flex-col items-center justify-center gap-1 cursor-pointer" onclick="app.showToast('Biometric scanner initialized. Fingerprint matched (ABDM RD-Service v2)', 'success')">
+          <span class="material-symbols-outlined text-[40px] text-primary" style="animation: pulse 1.5s infinite;">fingerprint</span>
+          <strong class="text-xs font-bold text-primary">ABDM RD-Service Sensor Active</strong>
+          <span class="text-[11px] text-muted">Touch connected biometric scanner / Iris sensor to verify</span>
+          <span class="badge-role badge-role-patient text-[10px] mt-1">L1 Hardware Biometric Certified</span>
+        </div>
+      `;
+    }
+  }
+
+  fillQuick(val) {
+    const input = document.getElementById("identifier-input");
+    if (input) {
+      input.value = val;
+      input.focus();
+    }
+    this.handleIdentifierInput(val);
+    this.showToast(`Populated identifier: "${val}"`, "info");
+  }
+
+  selectCadre(cadreType, sampleVal) {
+    this.detectedAuthRole = cadreType;
+    const input = document.getElementById("identifier-input");
+    if (input) {
+      input.value = sampleVal;
+    }
+    this.handleIdentifierInput(sampleVal);
+    this.showToast(`Selected cadre: ${cadreType}. Credentials pre-filled.`, "info");
+  }
+
+  triggerAuthResend() {
+    const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    const credInput = document.getElementById("credential-input");
+    if (credInput) {
+      credInput.value = newOtp;
+    }
+    this.showToast(`ABDM OTP dispatched: ${newOtp} (Expires in 5 mins)`, "success");
+  }
+
+  handleAuthSubmit() {
+    const consent = document.getElementById("consent-check");
+    if (consent && !consent.checked) {
+      this.showToast("Please consent to ABDM authentication guidelines to proceed.", "warning");
+      return;
+    }
+
+    const input = document.getElementById("identifier-input");
+    const val = input ? input.value : "";
+    const detection = this.detectRole(val);
+    const targetRole = detection.role || this.detectedAuthRole || "PATIENT";
+
+    this.showToast(`Authentication successful for ${targetRole}. Loading workspace...`, "success");
+
+    setTimeout(() => {
+      this.setRole(targetRole);
+    }, 400);
+  }
 }
+
+window.SwasthyaApp = SwasthyaApp;
 
 // Initialize on DOM ready
 document.addEventListener("DOMContentLoaded", () => {
   window.app = new SwasthyaApp();
 });
+
+

@@ -1,23 +1,93 @@
 /**
  * SwasthyaSetu Realistic Rural Healthcare Mock Dataset
- * Geographies: Rural Maharashtra / India Public Health Network
+ * Geographies: Rural Maharashtra / India Public Health Network (Pune, Shirur, Junnar, Ambegaon)
+ * Multi-Role Data Layer: Patient (Citizen), ASHA Worker, Doctor (MO), Health Admin
  */
 
 const SWASTHYA_DATA = {
-  currentUser: {
-    name: "Sunita More",
-    role: "ASHA", // 'ASHA', 'DOCTOR', 'ADMIN', 'PATIENT'
-    roleName: "Frontline Health Activist",
-    location: "Shirur PHC Cluster • Talwade SC",
-    badgeClass: "badge-role-asha",
-    assignedVillages: ["Talwade (Sector 4)", "Pabal", "Shikrapur", "Shirur Rural"]
+  // Role Profiles
+  roles: {
+    PATIENT: {
+      id: "pat-ramesh-patil",
+      name: "Ramesh Patil",
+      role: "PATIENT",
+      roleTitle: "Citizen / ABHA Beneficiary",
+      avatar: "RP",
+      badgeClass: "badge-role-patient",
+      badgeText: "Citizen (ABHA)",
+      location: "Talwade (Sector 4) • Shirur Block",
+      abhaId: "91-4029-1823-0192",
+      abhaAddress: "ramesh.patil@abdm",
+      phone: "+91 98220 14920",
+      age: 62,
+      gender: "Male",
+      assignedAsha: "Sunita More (Talwade Sub-Centre)",
+      linkagePhc: "Shirur 24x7 PHC • Dr. A. Kulkarni"
+    },
+    ASHA: {
+      id: "asha-sunita-more",
+      name: "Sunita More",
+      role: "ASHA",
+      roleTitle: "ASHA Frontline Health Activist · #2409",
+      avatar: "SM",
+      badgeClass: "badge-role-asha",
+      badgeText: "ASHA Worker",
+      subCentre: "Sub-Centre Ambegaon (Talwade Health Post)",
+      block: "Shirur / Junnar Block",
+      district: "Pune District • Maharashtra",
+      sector: "Shirur Sector #04",
+      registeredHouseholds: 480,
+      cohortPopulation: 2140,
+      activePatientsCount: 342,
+      assignedVillages: ["Talwade (Sector 4)", "Pabal Wadi", "Shikrapur Khurd", "Shirur Rural", "Shinde Wasti"],
+      phone: "+91 94230 01928"
+    },
+    DOCTOR: {
+      id: "doc-anand-kulkarni",
+      name: "Dr. A. Kulkarni",
+      role: "DOCTOR",
+      roleTitle: "Medical Officer (MBBS, DNB)",
+      avatar: "AK",
+      badgeClass: "badge-role-doctor",
+      badgeText: "Doctor (MO)",
+      facility: "Shirur 24x7 Primary Health Centre (PHC)",
+      location: "Shirur PHC • Room 4 Consultation Desk",
+      regNumber: "MMC-2012-08-2940",
+      phone: "+91 2138 222104"
+    },
+    ADMIN: {
+      id: "admin-sk-patil",
+      name: "Dr. S. K. Patil",
+      role: "ADMIN",
+      roleTitle: "District Health Officer (DHO)",
+      avatar: "SP",
+      badgeClass: "badge-role-admin",
+      badgeText: "Health Admin",
+      office: "District Public Health Office, Pune Grid",
+      location: "Pune Zilla Parishad Health Department",
+      jurisdiction: "24 PHCs • 6 SDHs • 142 Sub-Centres",
+      phone: "+91 20 2612 3456"
+    },
+    AUTH: {
+      id: "auth-gateway",
+      name: "National Health Authority",
+      role: "AUTH",
+      roleTitle: "ABDM Federated Access Hub",
+      avatar: "SS",
+      badgeClass: "badge-role-auth",
+      badgeText: "Unified Gateway",
+      location: "MoHFW • ABDM Gateway v2.4",
+      phone: "108 / 104"
+    }
   },
 
-  // Citizen / Patient ABHA Portal Data (from Stitch screen 2431b0db & 5770725d)
+  // Citizen / Patient Portal Longitudinal Data
   citizenUser: {
+    id: "pat-ramesh-patil",
     name: "Ramesh Patil",
     age: 62,
     gender: "Male",
+    bloodGroup: "O+",
     abhaId: "91-4029-1823-0192",
     abhaAddress: "ramesh.patil@abdm",
     phone: "+91 98220 14920",
@@ -32,94 +102,459 @@ const SWASTHYA_DATA = {
       bp: "138/86 mmHg",
       pulse: "78 bpm",
       temp: "98.6 °F",
+      sugar: "142 mg/dL",
       lastRecorded: "Today, 09:22 AM by ASHA Sunita"
     },
     prescriptions: [
       {
-        medicine: "Amlodipine 5mg",
-        dosage: "1 tab daily (Morning)",
-        duration: "30 Days",
+        id: "rx-01",
+        medicine: "Telmisartan 40mg",
+        dosage: "1 tablet daily",
+        frequency: "Morning",
+        scheduleTime: "8:00 AM",
+        instructions: "Take after breakfast with warm water",
+        indication: "Blood pressure regulation",
+        duration: "30 Days (18 Days Remaining)",
+        remainingDays: 18,
         source: "Jan Aushadhi Scheme",
         isSubsidized: true,
-        status: "Active Refill Available"
+        status: "Taken at 8:15 AM",
+        taken: true,
+        takenAt: "8:15 AM",
+        prescribedBy: "Dr. Rajesh Kulkarni (PHC Shirur)",
+        date: "16 Oct 2026"
       },
       {
-        medicine: "Salbutamol Inhaler 100mcg",
-        dosage: "2 puffs SOS (Breathlessness)",
-        duration: "PRN (As Needed)",
-        source: "PHC Shirur Emergency Bay",
+        id: "rx-02",
+        medicine: "Ecosprin AV 75/20",
+        dosage: "1 capsule daily",
+        frequency: "Afternoon",
+        scheduleTime: "1:30 PM",
+        instructions: "Take after lunch with water",
+        indication: "Blood thinner & vessel protector",
+        duration: "30 Days (18 Days Remaining)",
+        remainingDays: 18,
+        source: "Jan Aushadhi Scheme",
         isSubsidized: true,
-        status: "In Use"
+        status: "Due Now",
+        taken: false,
+        takenAt: null,
+        prescribedBy: "Dr. Sanjeev Thorat (Cardiology)",
+        date: "16 Oct 2026"
       },
       {
-        medicine: "Cefixime 200mg",
-        dosage: "1 tab twice daily after food",
-        duration: "5 Days (Day 3/5)",
+        id: "rx-03",
+        medicine: "Atorvastatin 40mg",
+        dosage: "1 tablet daily",
+        frequency: "Night",
+        scheduleTime: "9:00 PM",
+        instructions: "Take after dinner before sleep",
+        indication: "Cholesterol maintenance & lipid regulation",
+        duration: "30 Days (18 Days Remaining)",
+        remainingDays: 18,
+        source: "Jan Aushadhi Scheme",
+        isSubsidized: true,
+        status: "Upcoming tonight",
+        taken: false,
+        takenAt: null,
+        prescribedBy: "Dr. Sanjeev Thorat (Cardiology)",
+        date: "16 Oct 2026"
+      },
+      {
+        id: "rx-04",
+        medicine: "Amlodipine 5mg",
+        dosage: "1 tablet daily (Morning)",
+        frequency: "Morning",
+        scheduleTime: "8:00 AM",
+        instructions: "For supplemental BP control if SBP > 140",
+        indication: "Calcium channel blocker",
+        duration: "15 Days",
+        remainingDays: 12,
         source: "PHC OPD Dispensed",
-        isSubsidized: false,
-        status: "Ongoing Course"
+        isSubsidized: true,
+        status: "Active Refill Available",
+        taken: true,
+        takenAt: "8:15 AM",
+        prescribedBy: "Dr. Rajesh Kulkarni (PHC Shirur)",
+        date: "18 Sep 2026"
       }
     ],
     upcomingAppointments: [
       {
-        date: "Tomorrow, 10:00 AM",
-        title: "ASHA Post-Discharge Home Vitals Check",
-        provider: "Sunita More (ASHA)",
-        location: "Home Visit (Talwade)",
-        type: "Home Visit"
+        id: "apt-01",
+        doctorName: "Dr. Sanjeev Thorat",
+        specialty: "Senior Cardiologist · Heart Care Department",
+        degrees: "MD, DM (Cardiology)",
+        facility: "Sassoon General Hospital, Pune (Cardiology Wing, Desk 4)",
+        date: "Friday, 24 Oct 2026",
+        relativeDate: "In 2 Days",
+        time: "10:30 AM",
+        mode: "In-Person OPD Visit",
+        status: "Confirmed",
+        statusClass: "status-confirmed",
+        type: "Post-stabilization monthly follow-up & 12-Lead ECG progression check",
+        token: "TOKEN-SAS-14",
+        fee: "FREE (Ayushman Bharat / NHM)"
       },
       {
-        date: "24 Sep 2026",
-        title: "PHC Shirur NCD & Spirometry Review",
-        provider: "Dr. A. Kulkarni (Medical Officer)",
-        location: "Shirur PHC Room 4",
-        type: "Clinical Review"
+        id: "apt-02",
+        doctorName: "Dr. Rajesh Kulkarni",
+        specialty: "Medical Officer (Primary Care)",
+        degrees: "MBBS, DNB",
+        facility: "Shirur 24x7 Primary Health Centre",
+        date: "Wednesday, 29 Oct 2026",
+        relativeDate: "Next Week",
+        time: "11:00 AM",
+        mode: "Video Teleconsult",
+        status: "Confirmed",
+        statusClass: "status-confirmed",
+        type: "NCD Blood Pressure & Spirometry Routine Review",
+        token: "TOKEN-PHC-22",
+        fee: "FREE (Public Health Centre)"
+      }
+    ],
+    pastAppointments: [
+      {
+        id: "apt-past-01",
+        doctorName: "Dr. Rajesh Kulkarni",
+        specialty: "Medical Officer",
+        degrees: "MBBS, DNB",
+        facility: "Shirur Primary Health Centre (PHC)",
+        date: "18 Sep 2026",
+        time: "09:45 AM",
+        mode: "In-Person Emergency Bay",
+        status: "Completed",
+        statusClass: "status-completed",
+        type: "Acute Chest Tightness & Triage Transfer",
+        outcome: "High-flow O2 stabilized (SpO2 92% → 96%). Tele-ECG reviewed. Rx issued.",
+        token: "TOKEN-EMG-08"
+      },
+      {
+        id: "apt-past-02",
+        doctorName: "Dr. Priya K. Shinde",
+        specialty: "General Physician & Diabetic Care",
+        degrees: "MBBS, MD",
+        facility: "Talwade Community Health Center",
+        date: "12 Aug 2026",
+        time: "02:30 PM",
+        mode: "In-Person OPD",
+        status: "Completed",
+        statusClass: "status-completed",
+        type: "Routine Geriatric NCD Screening",
+        outcome: "Blood Sugar 142 mg/dL. Stable BP 138/86. Advised dietary low salt & walking.",
+        token: "TOKEN-CHC-41"
+      }
+    ],
+    cancelledAppointments: [
+      {
+        id: "apt-can-01",
+        doctorName: "Dr. Amit Patil",
+        specialty: "Orthopedic Surgeon",
+        degrees: "MBBS, MS",
+        facility: "District Civil Hospital Aundh, Pune",
+        date: "05 Aug 2026",
+        time: "03:00 PM",
+        mode: "In-Person OPD",
+        status: "Cancelled",
+        statusClass: "status-cancelled",
+        type: "Knee Joint Pain Review",
+        reason: "Patient resolved symptom with local physiotherapy at Talwade Sub-Centre",
+        token: "TOKEN-ORT-09"
+      }
+    ],
+    clinicalRecords: [
+      {
+        id: "rec-01",
+        type: "consultation",
+        title: "Cardiology Post-Stabilization Review",
+        doctorName: "Dr. Sanjeev Thorat, MD, DM",
+        facility: "Sassoon General Hospital, Pune",
+        date: "16 Oct 2026",
+        time: "11:30 AM",
+        vitals: "BP: 138/86 mmHg • SpO2: 97% • Pulse: 72 bpm • Weight: 68 kg",
+        diagnosis: "Post-ACS Stabilization, Essential Hypertension (Controlled)",
+        notes: "Patient is recovering well post-stabilization. Advised to continue Telmisartan 40mg and Ecosprin AV. Salt restricted to <5g/day. Scheduled monthly follow-up.",
+        prescriptions: ["Telmisartan 40mg (1 OD)", "Ecosprin AV 75/20 (1 OD)", "Atorvastatin 40mg (1 ON)"],
+        attachments: [
+          { name: "Clinical_Summary_Sassoon.pdf", size: "245 KB", type: "pdf" },
+          { name: "Digital_Prescription_Oct2026.pdf", size: "180 KB", type: "pdf" }
+        ]
+      },
+      {
+        id: "rec-02",
+        type: "diagnostic",
+        title: "12-Lead Diagnostic ECG Examination",
+        doctorName: "Dr. Rajesh Kulkarni, Medical Officer",
+        facility: "Shirur 24x7 Primary Health Centre",
+        date: "20 Oct 2026",
+        time: "10:15 AM",
+        vitals: "Heart Rate: 74 bpm • PR Interval: 156 ms • QTc: 418 ms",
+        diagnosis: "Normal Sinus Rhythm with Non-Specific ST-T Changes",
+        notes: "Resting 12-lead digital ECG acquired via portable telemedicine kit. Good progression compared to emergency baseline. Tele-cardiology verified.",
+        prescriptions: [],
+        attachments: [
+          { name: "12_Lead_ECG_Report_Shirur.pdf", size: "1.2 MB", type: "pdf" }
+        ]
+      },
+      {
+        id: "rec-03",
+        type: "lab",
+        title: "Cardiac Biomarkers & Lipid Profile",
+        doctorName: "Dr. Rajesh Kulkarni / Talwade Lab",
+        facility: "Shirur PHC Central Diagnostics",
+        date: "18 Oct 2026",
+        time: "08:30 AM",
+        vitals: "Serum Troponin-I: <0.01 ng/mL (Normal) • Total Cholesterol: 182 mg/dL • LDL: 98 mg/dL • Serum Creatinine: 0.9 mg/dL",
+        diagnosis: "Normal Cardiac Biomarkers • Controlled Lipid Profile",
+        notes: "Troponin-I within safe physiological limit. Renal function test normal.",
+        prescriptions: [],
+        attachments: [
+          { name: "Biochemistry_Report_Oct2026.pdf", size: "320 KB", type: "pdf" }
+        ]
+      },
+      {
+        id: "rec-04",
+        type: "discharge",
+        title: "Emergency Bay Stabilization & Discharge Summary",
+        doctorName: "Dr. Rajesh Kulkarni, Medical Officer",
+        facility: "Shirur 24x7 Primary Health Centre",
+        date: "18 Sep 2026",
+        time: "02:00 PM",
+        vitals: "Admission BP: 160/98 • Discharge BP: 136/84 • SpO2: 92% -> 96%",
+        diagnosis: "Hypertensive Crisis with Transient Acute Breathlessness (Stabilized)",
+        notes: "Patient brought in by ASHA Sunita More. Treated with nebulization, sublingual vasodilator, and high-flow O2. Monitored for 4 hours. Discharged with strict home protocol.",
+        prescriptions: ["Amlodipine 5mg", "Salbutamol Inhaler PRN"],
+        attachments: [
+          { name: "PHC_Discharge_Summary_Sep2026.pdf", size: "410 KB", type: "pdf" }
+        ]
+      }
+    ],
+    notifications: [
+      {
+        id: "notif-01",
+        title: "Upcoming Specialist Appointment",
+        message: "You have an in-person consultation with Dr. Sanjeev Thorat at Sassoon General Hospital this Friday at 10:30 AM. Token #TOKEN-SAS-14.",
+        time: "2 hours ago",
+        type: "appointment",
+        unread: true,
+        icon: "calendar_month",
+        actionView: "appointments"
+      },
+      {
+        id: "notif-02",
+        title: "Diagnostic Lab Result Available",
+        message: "Serum Troponin-I and Cardiac Lipid Profile results from Shirur PHC are ready. All parameters are within normal safe ranges.",
+        time: "Yesterday, 04:30 PM",
+        type: "lab",
+        unread: true,
+        icon: "lab_profile",
+        actionView: "medical-records"
+      },
+      {
+        id: "notif-03",
+        title: "Jan Aushadhi Refill Reminder",
+        message: "You have 18 days of Telmisartan and Atorvastatin remaining. Request your subsidized refill at Shirur Jan Aushadhi Kendra.",
+        time: "2 days ago",
+        type: "prescription",
+        unread: false,
+        icon: "local_pharmacy",
+        actionView: "prescriptions"
+      },
+      {
+        id: "notif-04",
+        title: "Daily Rural Health Care Tip",
+        message: "Remember to drink 2 liters of warm water throughout the day. Take a gentle 20-minute evening walk after 5:30 PM.",
+        time: "3 days ago",
+        type: "tip",
+        unread: false,
+        icon: "nature_people",
+        actionView: "home"
       }
     ],
     consentRecords: [
       {
+        id: "cst-01",
         provider: "Primary Health Centre (PHC) Shirur",
         purpose: "Care Continuum & Emergency Tele-Consult",
         grantedDate: "Today, 09:40 AM",
         expiry: "Valid for 6 Months",
-        status: "Active Consent"
+        status: "Active Consent",
+        hipId: "IN27100021"
       },
       {
+        id: "cst-02",
         provider: "National Health Authority (ABDM Grid)",
         purpose: "Longitudinal Electronic Health Record (EHR)",
         grantedDate: "15 Jan 2026",
         expiry: "Perpetual Citizen Consent",
-        status: "Active Consent"
+        status: "Active Consent",
+        hipId: "ABDM-M3-CENTRAL"
       }
     ]
   },
 
-  villages: [
-    "Talwade (Sector 4)",
-    "Pabal Wadi",
-    "Shikrapur Khurd",
-    "Shirur Rural",
-    "Ambegaon SC"
+  // Verified Doctors Directory (Patient Find Doctor / Booking / Teleconsult)
+  doctors: [
+    {
+      id: "doc-sanjeev-thorat",
+      name: "Dr. Sanjeev Thorat",
+      qualifications: "MBBS, MD, DM (Cardiology)",
+      specialty: "Senior Cardiologist (Heart Specialist)",
+      category: "cardiology",
+      facility: "Sassoon General Hospital & District Medical Center",
+      location: "Pune Central • 38 km from Shirur",
+      experience: "16 Years Experience",
+      languages: "Marathi, Hindi, English",
+      rating: "4.9",
+      totalVisits: "1,420+",
+      abdmVerified: true,
+      empanelment: "Ayushman Bharat / PMJAY Empanelled",
+      earliestSlot: "Tomorrow, 10:30 AM",
+      slotDate: "Tomorrow",
+      modes: ["In-Person", "Teleconsultation / Video"],
+      fee: "FREE (Govt / Ayushman Bharat)",
+      distance: "38 km",
+      availableToday: false,
+      availableTomorrow: true,
+      avatarImg: "",
+      bio: "Former Assistant Professor of Cardiology. Specialized in acute coronary syndrome, ischemic heart disease, and post-infarction care continuity for rural referrals.",
+      timings: "Mon-Sat: 09:00 AM - 02:00 PM"
+    },
+    {
+      id: "doc-rajesh-kulkarni",
+      name: "Dr. Rajesh Kulkarni",
+      qualifications: "MBBS, DNB (Family Medicine)",
+      specialty: "Primary Care Physician & Medical Officer",
+      category: "general",
+      facility: "Shirur 24x7 Primary Health Centre (PHC)",
+      location: "Shirur Cluster • 4.2 km from Talwade",
+      experience: "12 Years Clinical Experience",
+      languages: "Marathi, Hindi",
+      rating: "4.8",
+      totalVisits: "980+",
+      abdmVerified: true,
+      empanelment: "National Health Mission (NHM)",
+      earliestSlot: "Today, 02:00 PM - 05:00 PM",
+      slotDate: "Today",
+      modes: ["In-Person Walk-in", "Tele-Triage"],
+      fee: "FREE (Public Health Centre)",
+      distance: "4.2 km",
+      availableToday: true,
+      availableTomorrow: true,
+      avatarImg: "",
+      bio: "Medical Officer in charge at Shirur PHC. Leads non-communicable disease control, emergency triage stabilization, and frontline ASHA coordination.",
+      timings: "Daily 24x7 Emergency Desk • OPD 08:30 AM - 01:30 PM"
+    },
+    {
+      id: "doc-priya-shinde",
+      name: "Dr. Priya K. Shinde",
+      qualifications: "MBBS, MD (Internal Medicine)",
+      specialty: "General Physician & Diabetic Care Specialist",
+      category: "general",
+      facility: "Talwade Community Health Center (CHC)",
+      location: "Talwade Health Post • 1.2 km away",
+      experience: "9 Years Clinical Experience",
+      languages: "Marathi, Hindi, English",
+      rating: "4.9",
+      totalVisits: "1,110+",
+      abdmVerified: true,
+      empanelment: "Ayushman Bharat / HWC",
+      earliestSlot: "Today, 04:00 PM",
+      slotDate: "Today",
+      modes: ["In-Person", "Video Teleconsult"],
+      fee: "FREE (Sub-Centre / CHC)",
+      distance: "1.2 km",
+      availableToday: true,
+      availableTomorrow: true,
+      avatarImg: "",
+      bio: "Specialist in chronic lifestyle illness management, geriatric care, hypertension monitoring, and HbA1c screening protocols.",
+      timings: "Mon-Fri: 09:00 AM - 05:00 PM"
+    },
+    {
+      id: "doc-ananya-deshmukh",
+      name: "Dr. Ananya Deshmukh",
+      qualifications: "MBBS, MS (Obstetrics & Gynecology)",
+      specialty: "Maternal Health & Gynecologist",
+      category: "gynecology",
+      facility: "Sub-District Hospital (SDH) Junnar",
+      location: "Junnar Hospital Road • 18 km away",
+      experience: "14 Years Experience",
+      languages: "Marathi, Hindi",
+      rating: "4.9",
+      totalVisits: "2,300+",
+      abdmVerified: true,
+      empanelment: "Pradhan Mantri Surakshit Matritva",
+      earliestSlot: "Thursday, 10:00 AM",
+      slotDate: "Upcoming",
+      modes: ["In-Person", "Teleconsultation"],
+      fee: "FREE (PMSMA Scheme)",
+      distance: "18.2 km",
+      availableToday: false,
+      availableTomorrow: false,
+      avatarImg: "",
+      bio: "High-risk pregnancy specialist, maternal health strategist, and emergency obstetric care lead for Junnar and Ambegaon blocks.",
+      timings: "Mon, Wed, Fri: 09:30 AM - 03:30 PM"
+    },
+    {
+      id: "doc-amit-patil",
+      name: "Dr. Amit Patil",
+      qualifications: "MBBS, MS (Orthopedics)",
+      specialty: "Orthopedic Surgeon (Bone & Joint)",
+      category: "orthopedics",
+      facility: "District Civil Hospital Aundh, Pune",
+      location: "Aundh, Pune • 42 km away",
+      experience: "15 Years Experience",
+      languages: "Marathi, Hindi, English",
+      rating: "4.7",
+      totalVisits: "1,850+",
+      abdmVerified: true,
+      empanelment: "District Civil Network",
+      earliestSlot: "Friday, 11:30 AM",
+      slotDate: "Upcoming",
+      modes: ["In-Person OPD"],
+      fee: "FREE (District Civil)",
+      distance: "42.0 km",
+      availableToday: false,
+      availableTomorrow: false,
+      avatarImg: "",
+      bio: "Trauma specialist, arthroscopy and joint reconstruction clinician for complex rural road accident and geriatric fall referrals.",
+      timings: "Tue, Thu, Sat: 10:00 AM - 04:00 PM"
+    },
+    {
+      id: "doc-meera-joshi",
+      name: "Dr. Meera Joshi",
+      qualifications: "MBBS, MD (Pediatrics)",
+      specialty: "Child Health & Pediatric Specialist",
+      category: "pediatrics",
+      facility: "Shirur 24x7 Primary Health Centre",
+      location: "Shirur • 4.2 km away",
+      experience: "8 Years Clinical Experience",
+      languages: "Marathi, Hindi",
+      rating: "4.8",
+      totalVisits: "890+",
+      abdmVerified: true,
+      empanelment: "RBSK Child Health",
+      earliestSlot: "Tomorrow, 09:00 AM",
+      slotDate: "Tomorrow",
+      modes: ["In-Person", "Tele-Triage"],
+      fee: "FREE (RBSK / Govt)",
+      distance: "4.2 km",
+      availableToday: false,
+      availableTomorrow: true,
+      avatarImg: "",
+      bio: "Rashtriya Bal Swasthya Karyakram (RBSK) empanelled pediatrician specializing in neonatal care, malnutrition screening, and childhood immunization.",
+      timings: "Daily OPD: 09:00 AM - 02:00 PM"
+    }
   ],
 
-  symptomOptions: [
-    { id: "breathlessness", label: "Shortness of Breath / Breathlessness", highRisk: true },
-    { id: "chest_pain", label: "Chest Tightness / Pain", highRisk: true },
-    { id: "high_fever", label: "Persistent High Fever (>3 days)", moderateRisk: true },
-    { id: "dizziness", label: "Severe Dizziness / Fainting", moderateRisk: true },
-    { id: "cough", label: "Chronic Cough (>2 weeks)", moderateRisk: true },
-    { id: "swelling", label: "Bilateral Leg Swelling", moderateRisk: true },
-    { id: "fatigue", label: "Extreme Fatigue / Pallor", lowRisk: true },
-    { id: "routine", label: "Routine Non-Communicable Screening", lowRisk: true }
-  ],
-
+  // Public Health Facilities Directory
   facilities: [
     {
       id: "phc-shirur",
       name: "Shirur Primary Health Centre (PHC)",
       type: "Primary Health Centre (24x7)",
       distance: "4.2 km",
-      doctorInCharge: "Dr. A. Kulkarni, MBBS",
+      doctorInCharge: "Dr. A. Kulkarni, MBBS, DNB",
       availability: "Active / Available",
       statusClass: "available",
       capabilities: [
@@ -130,6 +565,8 @@ const SWASTHYA_DATA = {
         { name: "ICU Beds", active: false }
       ],
       bedCapacity: "4 / 6 Oxygen Beds Free",
+      totalBeds: 12,
+      occupiedBeds: 8,
       contact: "02138-222104"
     },
     {
@@ -148,12 +585,14 @@ const SWASTHYA_DATA = {
         { name: "ICU Stabilization", active: true }
       ],
       bedCapacity: "14 / 30 Beds Free",
+      totalBeds: 50,
+      occupiedBeds: 36,
       contact: "+91 2132 242200"
     },
     {
       id: "sc-talwade",
       name: "Talwade Sub-Centre Health Post",
-      type: "Sub-Centre / HWC",
+      type: "Sub-Centre / Ayushman Arogya Mandir",
       distance: "1.2 km",
       doctorInCharge: "Sunita More (ASHA) / Geeta ANM",
       availability: "Available",
@@ -166,6 +605,8 @@ const SWASTHYA_DATA = {
         { name: "24x7 Ambulance", active: false }
       ],
       bedCapacity: "Day Care Only",
+      totalBeds: 2,
+      occupiedBeds: 0,
       contact: "+91 9423 001928"
     },
     {
@@ -184,10 +625,13 @@ const SWASTHYA_DATA = {
         { name: "24x7 Ambulance Fleet", active: true }
       ],
       bedCapacity: "3 / 60 ICU Free",
+      totalBeds: 200,
+      occupiedBeds: 188,
       contact: "+91 20 2710 4000"
     }
   ],
 
+  // Active Demo Patient Case
   demoPatient: {
     id: "pat-ramesh-patil",
     name: "Ramesh Patil",
@@ -208,9 +652,9 @@ const SWASTHYA_DATA = {
       bpStatus: "Stage 2 Hypertension",
       pulse: 104,
       pulseStatus: "Elevated Pulse (Tachycardia)",
-      temp: "101.4 °F",
+      temp: "101.4",
       tempStatus: "Febrile",
-      bloodSugar: "186 mg/dL",
+      bloodSugar: "186",
       sugarStatus: "Elevated"
     },
     riskIndicators: [
@@ -220,7 +664,7 @@ const SWASTHYA_DATA = {
       "Reported Acute Chest Tightness & Breathlessness"
     ],
     recommendedAction: "Priority transfer to Shirur PHC Oxygen Stabilization Bay. 108 Ambulance Notified.",
-    journeyStep: 4, // 1: Profile, 2: Assessment, 3: Triage, 4: Facility, 5: Referral, 6: Doctor, 7: Follow-up
+    journeyStep: 4,
     currentFacility: "Shirur Primary Health Centre (PHC)",
     assignedAsha: "Sunita More (Talwade SC)",
     timeline: [
@@ -259,54 +703,161 @@ const SWASTHYA_DATA = {
     ]
   },
 
+  // ASHA Village Population Registry (Community Cohort)
   recentPatients: [
     {
       id: "pat-ramesh-patil",
       name: "Ramesh Patil",
       age: 62,
       gender: "Male",
-      village: "Talwade",
+      village: "Talwade (Sector 4)",
+      address: "House #114, Wadgaon Road",
       abhaId: "91-4029-1823-0192",
+      phone: "+91 98220 14920",
       riskLevel: "HIGH",
       riskClass: "risk-high",
       spo2: "92%",
       bp: "160/98",
       pulse: "104 bpm",
-      status: "Referred to Shirur PHC",
+      temp: "101.4 °F",
+      sugar: "186 mg/dL",
+      status: "Post-Discharge Day 14 • High BP",
+      category: "ncd",
       lastVisit: "Today, 09:22 AM",
-      journeyStep: 4
+      journeyStep: 4,
+      condition: "Hypertension & ACS Stent Recovery"
+    },
+    {
+      id: "pat-meena-kamble",
+      name: "Meena Kamble",
+      age: 24,
+      gender: "Female",
+      village: "Shinde Wasti",
+      address: "Shinde Wasti, Farm House #3",
+      abhaId: "22-9014-4318-7712",
+      phone: "+91 98000 00002",
+      riskLevel: "MODERATE",
+      riskClass: "risk-moderate",
+      spo2: "98%",
+      bp: "126/82",
+      pulse: "82 bpm",
+      temp: "98.4 °F",
+      sugar: "98 mg/dL",
+      status: "ANC 32 Weeks • Hb 9.8 g/dL",
+      category: "maternal",
+      lastVisit: "Today, 11:00 AM",
+      journeyStep: 3,
+      condition: "Antenatal Care (Mild Pedal Edema)"
+    },
+    {
+      id: "pat-kavita-jadhav",
+      name: "Kavita Jadhav",
+      age: 28,
+      gender: "Female",
+      village: "Wadgaon Hamlet #4",
+      address: "Wadgaon Hamlet #4, Near ZP School",
+      abhaId: "91-8842-1092-3310",
+      phone: "+91 98220 00004",
+      riskLevel: "EMERGENCY",
+      riskClass: "risk-emergency",
+      spo2: "95%",
+      bp: "162/104",
+      pulse: "112 bpm",
+      temp: "99.1 °F",
+      sugar: "110 mg/dL",
+      status: "In Transit • 108 Ambulance (ETA 12m)",
+      category: "maternal",
+      lastVisit: "Today, 08:45 AM",
+      journeyStep: 5,
+      condition: "Suspected Pre-eclampsia & SBP 162"
+    },
+    {
+      id: "pat-aarav-shinde",
+      name: "Aarav Shinde",
+      age: 1.5,
+      gender: "Male",
+      village: "Talwade (Sector 4)",
+      address: "Near Gram Panchayat Well",
+      abhaId: "91-7710-3341-9902",
+      phone: "+91 98000 00003",
+      riskLevel: "LOW",
+      riskClass: "risk-low",
+      spo2: "99%",
+      bp: "92/60",
+      pulse: "118 bpm",
+      temp: "98.6 °F",
+      sugar: "84 mg/dL",
+      status: "Immunization Due: Pentavalent-3 / bOPV",
+      category: "pediatric",
+      lastVisit: "Today, 02:30 PM",
+      journeyStep: 2,
+      condition: "Childhood Universal Immunization (VHSND)"
+    },
+    {
+      id: "pat-babanrao-gaikwad",
+      name: "Babanrao Gaikwad",
+      age: 58,
+      gender: "Male",
+      village: "Pabal Wadi",
+      address: "Pabal Road, Near Post Office",
+      abhaId: "91-3319-7721-0094",
+      phone: "+91 98220 00005",
+      riskLevel: "MODERATE",
+      riskClass: "risk-moderate",
+      spo2: "97%",
+      bp: "136/88",
+      pulse: "76 bpm",
+      temp: "98.6 °F",
+      sugar: "210 mg/dL",
+      status: "Specialist Referral Confirmed",
+      category: "ncd",
+      lastVisit: "Yesterday, 04:30 PM",
+      journeyStep: 6,
+      condition: "Diabetic Retinopathy Screening"
     },
     {
       id: "pat-sunita-jadhav",
       name: "Sunita Jadhav",
       age: 28,
       gender: "Female",
-      village: "Pabal",
+      village: "Pabal Wadi",
+      address: "Pabal Central Hamlet #12",
       abhaId: "91-8831-4491-3820",
+      phone: "+91 98331 44912",
       riskLevel: "MODERATE",
       riskClass: "risk-moderate",
       spo2: "98%",
       bp: "132/86",
       pulse: "80 bpm",
+      temp: "98.6 °F",
+      sugar: "102 mg/dL",
       status: "ANC 28w • Hb 9.2 g/dL",
+      category: "maternal",
       lastVisit: "Yesterday",
-      journeyStep: 2
+      journeyStep: 2,
+      condition: "Antenatal Care & Nutrition Review"
     },
     {
       id: "pat-ananda-shinde",
       name: "Ananda Shinde",
       age: 45,
       gender: "Male",
-      village: "Shikrapur",
+      village: "Shikrapur Khurd",
+      address: "Shikrapur Khurd Main Chowk",
       abhaId: "91-2291-7712-4411",
+      phone: "+91 98450 11920",
       riskLevel: "LOW",
       riskClass: "risk-low",
       spo2: "99%",
       bp: "122/80",
       pulse: "74 bpm",
+      temp: "98.2 °F",
+      sugar: "128 mg/dL",
       status: "Amlodipine 5mg Refilled",
+      category: "ncd",
       lastVisit: "3 days ago",
-      journeyStep: 7
+      journeyStep: 7,
+      condition: "Essential Hypertension Maintenance"
     },
     {
       id: "pat-kavita-rathod",
@@ -314,32 +865,420 @@ const SWASTHYA_DATA = {
       age: 8,
       gender: "Female",
       village: "Shirur Rural",
+      address: "Shirur Rural ZP Colony",
       abhaId: "91-5541-9023-7710",
+      phone: "+91 98221 00982",
       riskLevel: "EMERGENCY",
       riskClass: "risk-emergency",
       spo2: "84%",
       bp: "90/58",
       pulse: "132 bpm",
-      status: "District Transfer En Route",
+      temp: "103.8 °F",
+      sugar: "92 mg/dL",
+      status: "District Hospital Transfer Complete",
+      category: "pediatric",
       lastVisit: "Today, 07:45 AM",
-      journeyStep: 5
+      journeyStep: 5,
+      condition: "Severe Pediatric Dehydration"
+    },
+    {
+      id: "pat-maruti-chavan",
+      name: "Maruti Chavan",
+      age: 70,
+      gender: "Male",
+      village: "Talwade (Sector 4)",
+      address: "Talwade East Gali #2",
+      abhaId: "91-3312-8874-9012",
+      phone: "+91 98230 44102",
+      riskLevel: "LOW",
+      riskClass: "risk-low",
+      spo2: "97%",
+      bp: "128/82",
+      pulse: "70 bpm",
+      temp: "98.4 °F",
+      sugar: "134 mg/dL",
+      status: "Routine Screening Normal",
+      category: "geriatric",
+      lastVisit: "5 days ago",
+      journeyStep: 1,
+      condition: "Geriatric NCD Wellness Check"
     }
   ],
 
+  // ASHA Active Referrals Tracking (Continuum Lifecycle)
+  ashaReferrals: [
+    {
+      id: "ref-9021",
+      patientId: "pat-kavita-jadhav",
+      patientName: "Kavita Jadhav",
+      age: 28,
+      gender: "Female",
+      village: "Wadgaon Hamlet #4",
+      abhaId: "91-8842-1092-3310",
+      phone: "+91 98220 00004",
+      referralType: "Urgent Maternal Transfer",
+      referralCategory: "emergency",
+      urgency: "EMERGENCY / URGENT",
+      urgencyClass: "risk-emergency",
+      clinicalNeed: "Suspected Pre-eclampsia • BP 162/104 mmHg • Proteinuria suspected",
+      facilityId: "phc-shirur",
+      facilityName: "Shirur 24x7 Primary Health Centre",
+      doctorAssigned: "Dr. A. Kulkarni (Medical Officer)",
+      transportMode: "108 ALS Ambulance (En Route)",
+      ambulanceReg: "MH-12-CZ-9812",
+      ambulanceEta: "12 mins",
+      status: "In Transit (108 Dispatched)",
+      statusStep: 4,
+      statusClass: "status-pending",
+      slipToken: "REF-2026-PHC-9021",
+      createdAt: "Today, 08:45 AM",
+      notes: "High priority obstetric alert communicated to Dr. Kulkarni. Oxygen stabilization bay and antihypertensive infusion kept ready."
+    },
+    {
+      id: "ref-8842",
+      patientId: "pat-babanrao-gaikwad",
+      patientName: "Babanrao Gaikwad",
+      age: 58,
+      gender: "Male",
+      village: "Pabal Wadi",
+      abhaId: "91-3319-7721-0094",
+      phone: "+91 98220 00005",
+      referralType: "Specialist OPD Consultation",
+      referralCategory: "specialist",
+      urgency: "ROUTINE SPECIALIST",
+      urgencyClass: "risk-moderate",
+      clinicalNeed: "Diabetic Retinopathy • Annual Dilated Fundus Screening",
+      facilityId: "dh-pune",
+      facilityName: "Sassoon General Hospital & Medical College",
+      doctorAssigned: "Dr. Sanjeev Thorat (Cardio/Diabetic Review)",
+      transportMode: "Family Transport (MSRTC Bus)",
+      ambulanceReg: null,
+      ambulanceEta: null,
+      status: "Appointment Confirmed",
+      statusStep: 5,
+      statusClass: "status-confirmed",
+      slipToken: "REF-2026-SAS-8842",
+      slotTime: "Tomorrow, 10:30 AM Slot #4",
+      createdAt: "Yesterday, 04:30 PM",
+      notes: "Referred for dilated pupil ophthalmology examination. Token confirmed on State ABDM Registry."
+    },
+    {
+      id: "ref-7710",
+      patientId: "pat-ramesh-patil",
+      patientName: "Ramesh Patil",
+      age: 62,
+      gender: "Male",
+      village: "Talwade (Sector 4)",
+      abhaId: "91-4029-1823-0192",
+      phone: "+91 98220 14920",
+      referralType: "Acute Coronary / Chest Pain",
+      referralCategory: "cardiac",
+      urgency: "HIGH RISK",
+      urgencyClass: "risk-high",
+      clinicalNeed: "Post-ACS Stent Placement (Day 14) • Elevated BP 160/98 mmHg",
+      facilityId: "phc-shirur",
+      facilityName: "Shirur 24x7 Primary Health Centre",
+      doctorAssigned: "Dr. Rajesh Kulkarni",
+      transportMode: "Assisted Transit Completed",
+      ambulanceReg: "MH-12-CZ-9812",
+      ambulanceEta: "Arrived",
+      status: "Discharged to ASHA Home Protocol",
+      statusStep: 7,
+      statusClass: "status-completed",
+      slipToken: "REF-2026-SHIRUR-0982",
+      createdAt: "18 Sep 2026",
+      notes: "Initial crisis stabilized with O2 and sublingual vasodilator. Discharged with strict home blood pressure protocol."
+    },
+    {
+      id: "ref-6512",
+      patientId: "pat-kavita-rathod",
+      patientName: "Kavita Rahul Rathod",
+      age: 8,
+      gender: "Female",
+      village: "Shirur Rural",
+      abhaId: "91-5541-9023-7710",
+      phone: "+91 98221 00982",
+      referralType: "Pediatric Emergency Transfer",
+      referralCategory: "pediatric",
+      urgency: "EMERGENCY",
+      urgencyClass: "risk-emergency",
+      clinicalNeed: "Severe Pediatric Dehydration + Hypoxemia (SpO2 84%)",
+      facilityId: "sdh-junnar",
+      facilityName: "Sub-District Hospital (SDH) Junnar",
+      doctorAssigned: "Dr. Rajesh Shirole, MD",
+      transportMode: "108 ALS Ambulance",
+      ambulanceReg: "MH-12-AU-1108",
+      ambulanceEta: "Arrived",
+      status: "Admitted & Stabilized (Bed #1)",
+      statusStep: 6,
+      statusClass: "status-completed",
+      slipToken: "REF-2026-JUN-6512",
+      createdAt: "Today, 07:45 AM",
+      notes: "Pediatric IV fluid resuscitation initiated upon arrival. SpO2 improved to 96%."
+    }
+  ],
+
+  // ASHA Home Follow-ups Registry
+  ashaFollowUps: [
+    {
+      id: "fu-01",
+      patientId: "pat-ramesh-patil",
+      patientName: "Ramesh Patil",
+      age: 62,
+      gender: "Male",
+      village: "Talwade (Sector 4)",
+      address: "House #114, Wadgaon Road",
+      abhaId: "91-4029-1823-0192",
+      phone: "+91 98220 14920",
+      reason: "Post-PHC Stent Placement (Day 14) • High BP Check",
+      category: "Post-Discharge",
+      scheduledTime: "09:30 AM (Overdue)",
+      dueStatus: "Due Today",
+      dueClass: "risk-emergency",
+      lastRecordedBp: "158/94 mmHg",
+      currentMedication: "Jan Aushadhi Amlodipine 5mg & Telmisartan 40mg",
+      targetAction: "Record Vitals (BP Cuff) & Check Salt Restriction Compliance",
+      completed: false
+    },
+    {
+      id: "fu-02",
+      patientId: "pat-meena-kamble",
+      patientName: "Meena Kamble",
+      age: 24,
+      gender: "Female",
+      village: "Shinde Wasti",
+      address: "Shinde Wasti, Farm House #3",
+      abhaId: "22-9014-4318-7712",
+      phone: "+91 98000 00002",
+      reason: "Antenatal Care 32 Weeks • Check Pedal Edema & Hb Strip",
+      category: "Maternal ANC",
+      scheduledTime: "11:00 AM Today",
+      dueStatus: "Due Today",
+      dueClass: "risk-high",
+      lastRecordedHb: "9.8 g/dL (Moderate)",
+      currentMedication: "Iron Folic Acid (IFA) 18 Remaining",
+      targetAction: "Record ANC Vitals & Dispense 30-Day IFA Foil Pack",
+      completed: false
+    },
+    {
+      id: "fu-03",
+      patientId: "pat-aarav-shinde",
+      patientName: "Aarav Shinde",
+      age: 1.5,
+      gender: "Male",
+      village: "Talwade (Sector 4)",
+      address: "Near Gram Panchayat Well",
+      abhaId: "91-7710-3341-9902",
+      phone: "+91 98000 00003",
+      reason: "Universal Immunization • Pentavalent-3 & bOPV Booster Due",
+      category: "Child Health",
+      scheduledTime: "02:30 PM Today",
+      dueStatus: "Due Today",
+      dueClass: "risk-low",
+      targetCamp: "Friday VHSND @ Gram Panchayat Hall",
+      targetAction: "Mother Pre-Counselling & Nutrition Supplementation",
+      completed: false
+    },
+    {
+      id: "fu-04",
+      patientId: "pat-sunita-jadhav",
+      patientName: "Sunita Jadhav",
+      age: 28,
+      gender: "Female",
+      village: "Pabal Wadi",
+      address: "Pabal Central Hamlet #12",
+      abhaId: "91-8831-4491-3820",
+      phone: "+91 98331 44912",
+      reason: "Antenatal Care 28 Weeks • Second Trimester Blood Check",
+      category: "Maternal ANC",
+      scheduledTime: "Tomorrow, 10:00 AM",
+      dueStatus: "Upcoming This Week",
+      dueClass: "risk-moderate",
+      lastRecordedHb: "9.2 g/dL",
+      targetAction: "Dietary Counselling & Calcium Supplementation Check",
+      completed: false
+    },
+    {
+      id: "fu-05",
+      patientId: "pat-ananda-shinde",
+      patientName: "Ananda Shinde",
+      age: 45,
+      gender: "Male",
+      village: "Shikrapur Khurd",
+      address: "Shikrapur Khurd Main Chowk",
+      abhaId: "91-2291-7712-4411",
+      phone: "+91 98450 11920",
+      reason: "Chronic Hypertension Maintenance • Refill Review",
+      category: "Chronic NCD",
+      scheduledTime: "Thursday, 24 Sep",
+      dueStatus: "Upcoming This Week",
+      dueClass: "risk-low",
+      lastRecordedBp: "122/80 mmHg",
+      targetAction: "Check Digital BP & Issue Jan Aushadhi Refill Slip",
+      completed: false
+    }
+  ],
+
+  // ASHA Frontline Notifications
+  ashaNotifications: [
+    {
+      id: "notif-asha-01",
+      title: "108 Ambulance Dispatched for Kavita Jadhav",
+      message: "Ambulance MH-12-CZ-9812 dispatched from Shirur Hub. ETA to Wadgaon Hamlet: 12 mins. Escort destination: Shirur 24x7 PHC.",
+      time: "10 mins ago",
+      type: "emergency",
+      unread: true,
+      icon: "airport_shuttle",
+      actionView: "referrals"
+    },
+    {
+      id: "notif-asha-02",
+      title: "Referral Accepted: Dr. A. Kulkarni (PHC Shirur)",
+      message: "Dr. Kulkarni has accepted referral REF-9021 for Kavita Jadhav. Emergency bay and oxygen bed reserved on standby.",
+      time: "25 mins ago",
+      type: "referral",
+      unread: true,
+      icon: "check_circle",
+      actionView: "referrals"
+    },
+    {
+      id: "notif-asha-03",
+      title: "High Blood Pressure Alert: Ramesh Patil",
+      message: "Post-discharge day 14 visit is overdue for Ramesh Patil. Last recorded BP was 158/94 mmHg. Please perform home vitals check.",
+      time: "1 hour ago",
+      type: "alert",
+      unread: true,
+      icon: "warning",
+      actionView: "followups"
+    },
+    {
+      id: "notif-asha-04",
+      title: "ASHA Kit Restock Indent Approved",
+      message: "Your indent for 200 IFA foil packs and 50 Hb color scale strips has been approved by Talwade PHC Medical Store.",
+      time: "Yesterday, 04:15 PM",
+      type: "supply",
+      unread: false,
+      icon: "inventory_2",
+      actionView: "dashboard"
+    }
+  ],
+
+  // ASHA Kit Supplies Status
+  ashaSupplies: [
+    {
+      id: "sup-01",
+      name: "Digital BP Apparatus (Omron)",
+      type: "Diagnostic Device",
+      status: "Calibrated (Oct 12)",
+      statusClass: "text-primary font-bold",
+      icon: "check_box",
+      iconColor: "text-primary",
+      stockQuantity: "1 Unit in Bag",
+      restockNeeded: false
+    },
+    {
+      id: "sup-02",
+      name: "Hb Color Scale Strips",
+      type: "Rapid Test Strips",
+      status: "45 Strips Left",
+      statusClass: "text-on-surface font-semibold",
+      icon: "check_box",
+      iconColor: "text-primary",
+      stockQuantity: "45 / 100",
+      restockNeeded: false
+    },
+    {
+      id: "sup-03",
+      name: "Iron Folic Acid (IFA) Tablets",
+      type: "Maternal Supplements",
+      status: "120 Foil Packs",
+      statusClass: "text-secondary font-bold",
+      icon: "inventory_2",
+      iconColor: "text-secondary",
+      stockQuantity: "120 Packs",
+      restockNeeded: false
+    },
+    {
+      id: "sup-04",
+      name: "Pregnancy Test Strips (Nishchay)",
+      type: "Point of Care Diagnostic",
+      status: "3 Left • Restock Due",
+      statusClass: "text-error font-bold",
+      icon: "warning",
+      iconColor: "text-error",
+      stockQuantity: "3 / 25",
+      restockNeeded: true
+    }
+  ],
+
+  // Community Outreach & NCD Drive
+  ashaOutreach: [
+    {
+      id: "out-01",
+      day: "WED",
+      dateNum: "24",
+      title: "Door-to-Door Hypertension Screening",
+      target: "Ward No. 3 (South Hamlet) • 42 adults aged 30+ scheduled for digital cuff check",
+      status: "In Progress",
+      statusClass: "text-primary font-bold",
+      badge: "Week 43"
+    },
+    {
+      id: "out-02",
+      day: "FRI",
+      dateNum: "26",
+      title: "Universal Immunization Day (VHSND)",
+      target: "Co-hosting with ANM Sarita Jagtap • 16 infants due for Pentavalent/MMR • Nutrition supplements",
+      status: "Gram Panchayat Hall",
+      statusClass: "badge-role-asha",
+      badge: "Co-host ANM"
+    }
+  ],
+
+  // ASHA Profile & Incentives Data
+  ashaProfile: {
+    workerName: "Sunita More",
+    workerId: "ASHA-2409",
+    subCentre: "Sub-Centre Ambegaon",
+    phcLinkage: "Shirur 24x7 Primary Health Centre",
+    block: "Shirur / Junnar Block",
+    district: "Pune District • Maharashtra",
+    populationCohort: 2140,
+    registeredHouseholds: 480,
+    highRiskCases: 14,
+    ancPncCases: 28,
+    chronicNcdCases: 96,
+    joiningYear: "2018 (8 Years Service)",
+    nhmCadreId: "MH-PUN-ASHA-0941",
+    monthlyIncentiveDue: "₹6,850",
+    incentivesBreakdown: [
+      { item: "Routine Maternal ANC/PNC Home Visits (28 cases)", amount: "₹2,800" },
+      { item: "High-Risk Follow-up & Emergency Transport Escort", amount: "₹1,500" },
+      { item: "VHSND Session Co-hosting & Immunization Mobilization", amount: "₹1,200" },
+      { item: "NCD Door-to-Door Screening Incentive (18 households)", amount: "₹1,350" }
+    ],
+    deviceStatus: "Encrypted SQLite Handset • Version 3.2 • 100% Sync"
+  },
+
+  // Doctor Clinical Station Tele-Triage & OPD Queue
   doctorQueue: [
     {
       id: "pat-ramesh-patil",
       name: "Ramesh Patil",
       age: 62,
       gender: "Male",
-      village: "Talwade",
+      village: "Talwade (Sector 4)",
       abhaId: "91-4029-1823-0192",
       riskLevel: "HIGH",
       riskClass: "risk-high",
       referralReason: "Acute Breathlessness + SpO2 92% + SBP 160 mmHg",
       referredBy: "Sunita More (ASHA, Talwade)",
       arrivalTime: "En route 108 Ambulance (ETA: 10 mins)",
-      vitalsSummary: "SpO2: 92% • BP: 160/98 • Pulse: 104 • Temp: 101.4°F"
+      vitalsSummary: "SpO2: 92% • BP: 160/98 • Pulse: 104 • Temp: 101.4°F",
+      symptoms: "Shortness of Breath, Chest Tightness, Persistent Fever",
+      status: "Pending Intake",
+      bedAllocated: "Oxygen Bay #4",
+      activeStep: 6
     },
     {
       id: "pat-kavita-rathod",
@@ -353,8 +1292,183 @@ const SWASTHYA_DATA = {
       referralReason: "Severe Pediatric Dehydration + Hypoxemia",
       referredBy: "Geeta Devi (ANM)",
       arrivalTime: "Arrived at Emergency Bay",
-      vitalsSummary: "SpO2: 84% • Pulse: 132 • Temp: 103.8°F"
+      vitalsSummary: "SpO2: 84% • Pulse: 132 • Temp: 103.8°F",
+      symptoms: "High Fever, Lethargy, Shallow Breathing",
+      status: "Emergency Care Active",
+      bedAllocated: "Pediatric Bed #1",
+      activeStep: 6
+    },
+    {
+      id: "pat-sunita-jadhav",
+      name: "Sunita Jadhav",
+      age: 28,
+      gender: "Female",
+      village: "Pabal Wadi",
+      abhaId: "91-8831-4491-3820",
+      riskLevel: "MODERATE",
+      riskClass: "risk-moderate",
+      referralReason: "28 Weeks ANC Review • Mild Anemia (Hb 9.2 g/dL)",
+      referredBy: "Sunita More (ASHA)",
+      arrivalTime: "OPD Token #12 • Waiting Room",
+      vitalsSummary: "SpO2: 98% • BP: 132/86 • Pulse: 80 bpm",
+      symptoms: "Mild Fatigue, Leg Heaviness",
+      status: "OPD Waiting",
+      bedAllocated: "OPD Room 4",
+      activeStep: 6
     }
+  ],
+
+  // Admin: Doctor Verification Queue
+  adminDoctorVerifications: [
+    {
+      id: "ver-01",
+      doctorName: "Dr. Sandeep Deshpande",
+      degree: "MBBS, MD (General Medicine)",
+      mmcNumber: "MMC-2015-04-1849",
+      stateCouncil: "Maharashtra Medical Council",
+      facility: "Ghodnadi Community Health Center",
+      requestedRole: "Clinical Specialist (MD)",
+      submissionDate: "Today, 08:30 AM",
+      documents: ["Degree Certificate (PDF)", "MMC Registration (Verified)", "Govt ID (Aadhaar)"],
+      status: "Pending Verification",
+      statusClass: "status-pending"
+    },
+    {
+      id: "ver-02",
+      doctorName: "Dr. Vaishali Kadam",
+      degree: "MBBS, DGO (Obstetrics)",
+      mmcNumber: "MMC-2018-11-4022",
+      stateCouncil: "Maharashtra Medical Council",
+      facility: "Shirur 24x7 PHC Extension",
+      requestedRole: "Medical Officer (Maternal Health)",
+      submissionDate: "Yesterday",
+      documents: ["MBBS Certificate", "MMC Active Renewal 2026", "Aadhaar e-KYC"],
+      status: "Pending Verification",
+      statusClass: "status-pending"
+    },
+    {
+      id: "ver-03",
+      doctorName: "Dr. Sanjeev Thorat",
+      degree: "MBBS, MD, DM (Cardiology)",
+      mmcNumber: "MMC-2008-09-0821",
+      stateCouncil: "Maharashtra Medical Council",
+      facility: "Sassoon General Hospital Pune",
+      requestedRole: "Tertiary Tele-Consultant",
+      submissionDate: "10 Sep 2026",
+      documents: ["DM Degree", "State Council Record", "ABDM Registration"],
+      status: "Approved & Active",
+      statusClass: "status-approved"
+    }
+  ],
+
+  // Admin: ASHA Worker Cadre Performance & Sync Directory
+  adminAshaList: [
+    {
+      id: "asha-sunita-more",
+      name: "Sunita More",
+      subCentre: "Talwade Sub-Centre",
+      block: "Shirur",
+      assignedVillages: "Talwade Sec 4, Pabal, Shikrapur",
+      populationCovered: 1420,
+      activeHighRisk: 3,
+      screeningsThisMonth: 128,
+      syncRate: "100% (Up to date)",
+      lastSyncTime: "Today, 09:15 AM",
+      status: "Active Field"
+    },
+    {
+      id: "asha-shobha-kadam",
+      name: "Shobha Kadam",
+      subCentre: "Pabal Wadi Health Post",
+      block: "Shirur",
+      assignedVillages: "Pabal Central, Kharpudi",
+      populationCovered: 1180,
+      activeHighRisk: 2,
+      screeningsThisMonth: 94,
+      syncRate: "98% (2 pending)",
+      lastSyncTime: "Yesterday, 05:40 PM",
+      status: "Active Field"
+    },
+    {
+      id: "asha-vandana-shinde",
+      name: "Vandana Shinde",
+      subCentre: "Ambegaon Health Sub-Centre",
+      block: "Junnar",
+      assignedVillages: "Ambegaon Rural, Narayangaon Wadi",
+      populationCovered: 1650,
+      activeHighRisk: 4,
+      screeningsThisMonth: 142,
+      syncRate: "100%",
+      lastSyncTime: "Today, 08:50 AM",
+      status: "Active Field"
+    },
+    {
+      id: "asha-jyoti-bhosale",
+      name: "Jyoti Bhosale",
+      subCentre: "Shikrapur Sub-Centre",
+      block: "Shirur",
+      assignedVillages: "Shikrapur Khurd, Vadhu",
+      populationCovered: 1310,
+      activeHighRisk: 1,
+      screeningsThisMonth: 110,
+      syncRate: "95% (4 pending)",
+      lastSyncTime: "Today, 07:15 AM",
+      status: "Active Field"
+    }
+  ],
+
+  // ASHA Daily Field Tasks
+  ashaTasks: [
+    {
+      id: "task-01",
+      title: "Post-Discharge Vitals Check for Ramesh Patil",
+      type: "Home Visit (Follow-up)",
+      village: "Talwade (Sector 4)",
+      priority: "High Priority",
+      priorityClass: "risk-high",
+      dueDate: "Today, 02:00 PM",
+      status: "Pending"
+    },
+    {
+      id: "task-02",
+      title: "Antenatal Checkup & IFA Tablets Dispensing (Sunita Jadhav)",
+      type: "ANC Care Visit",
+      village: "Pabal Wadi",
+      priority: "Routine",
+      priorityClass: "risk-moderate",
+      dueDate: "Tomorrow, 10:00 AM",
+      status: "Pending"
+    },
+    {
+      id: "task-03",
+      title: "NCD Screening Camps: BP & Blood Glucose (Elderly Cluster)",
+      type: "Village Screening",
+      village: "Talwade Anganwadi #2",
+      priority: "Scheduled",
+      priorityClass: "risk-low",
+      dueDate: "23 Sep 2026",
+      status: "Scheduled"
+    }
+  ],
+
+  // Clinical Symptoms Options for Frontline Assessment
+  symptomOptions: [
+    { id: "breathlessness", label: "Shortness of Breath / Breathlessness", highRisk: true },
+    { id: "chest_pain", label: "Chest Tightness / Pain", highRisk: true },
+    { id: "high_fever", label: "Persistent High Fever (>3 days)", moderateRisk: true },
+    { id: "dizziness", label: "Severe Dizziness / Fainting", moderateRisk: true },
+    { id: "cough", label: "Chronic Cough (>2 weeks)", moderateRisk: true },
+    { id: "swelling", label: "Bilateral Leg Swelling", moderateRisk: true },
+    { id: "fatigue", label: "Extreme Fatigue / Pallor", lowRisk: true },
+    { id: "routine", label: "Routine Non-Communicable Screening", lowRisk: true }
+  ],
+
+  villages: [
+    "Talwade (Sector 4)",
+    "Pabal Wadi",
+    "Shikrapur Khurd",
+    "Shirur Rural",
+    "Ambegaon SC"
   ],
 
   adminStats: {
@@ -364,7 +1478,11 @@ const SWASTHYA_DATA = {
     activeReferrals: 12,
     followUpsPending: 19,
     syncRate: "99.4%",
-    facilitiesOperational: "24 / 24"
+    facilitiesOperational: "24 / 24",
+    doctorsVerified: 48,
+    pendingVerifications: 2,
+    oxygenBedsAvailable: "22 / 36 Free",
+    ambulancesOnDuty: "14 / 16 Fleet Active"
   },
 
   triageDistribution: {
@@ -383,4 +1501,3 @@ if (typeof window !== 'undefined') {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = SWASTHYA_DATA;
 }
-

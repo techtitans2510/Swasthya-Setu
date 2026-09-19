@@ -1,6 +1,7 @@
 /**
  * SwasthyaSetu Workflow Views CSS
- * Operational layouts for ASHA, Doctor, and District Administrative portals
+ * Operational layouts for Patient, ASHA, Doctor, and District Administrative portals
+ * Source: Stitch Project 11062066934146902009
  */
 
 /* ==========================================================================
@@ -98,186 +99,1147 @@
 }
 
 /* ==========================================================================
-   PATIENT REGISTRATION & CLINICAL ENTRY WIZARD
+   PATIENT FIND DOCTOR & DISCOVERY VIEW (Stitch Screen 887fcd04)
    ========================================================================== */
-.form-step-wizard {
-  background-color: var(--surface-card);
-  border: 1px solid var(--border-structural);
-  border-radius: var(--radius-md);
-  box-shadow: var(--elevation-1);
-  overflow: hidden;
+.patient-find-doctor-layout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  max-width: var(--max-content-width);
+  margin: 0 auto;
 }
 
-.wizard-header {
-  padding: var(--space-lg);
-  background-color: var(--surface-subtle);
-  border-bottom: 1px solid var(--border-structural);
+.citizen-assist-ribbon {
+  background-color: var(--surface-container-high);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md) var(--space-lg);
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
+  gap: var(--space-sm);
+  box-shadow: var(--elevation-1);
 }
 
-.wizard-step-pills {
+.assist-icon-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: var(--color-primary-container);
+  color: #FFFFFF;
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-.wizard-pill {
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: var(--radius-pill);
+.doctor-search-box {
   background-color: var(--surface-card);
   border: 1px solid var(--border-structural);
+  border-radius: var(--radius-xl);
+  padding: var(--space-xl);
+  box-shadow: var(--elevation-1);
+}
+
+.doctor-search-bar-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-top: var(--space-lg);
+}
+
+@media (min-width: 768px) {
+  .doctor-search-bar-row {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.doctor-search-input-wrap {
+  position: relative;
+  flex: 1;
+}
+
+.search-leading-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-primary);
+  font-size: 22px;
+  pointer-events: none;
+}
+
+.doctor-search-input {
+  width: 100%;
+  height: 52px;
+  padding: 0 48px 0 48px;
+  border-radius: var(--radius-lg);
+  background-color: var(--surface-container-low);
+  color: var(--color-neutral);
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  border: 1.5px solid transparent;
+  outline: none;
+  transition: all var(--transition-fast);
+}
+
+.doctor-search-input:focus {
+  background-color: #FFFFFF;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(14, 72, 52, 0.12);
+}
+
+.search-voice-btn {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: var(--color-neutral-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.search-voice-btn:hover { color: var(--color-primary); }
+
+.specialty-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  overflow-x: auto;
+  padding-top: var(--space-md);
+  padding-bottom: 4px;
+  white-space: nowrap;
+}
+
+.filter-pill {
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  background-color: var(--surface-subtle);
+  color: var(--color-neutral);
+  border: 1px solid var(--border-structural);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.filter-pill:hover {
+  background-color: var(--surface-container);
+  border-color: var(--border-emphasis);
+}
+
+.filter-pill.is-active {
+  background-color: var(--color-primary-container);
+  color: #FFFFFF;
+  border-color: var(--color-primary-container);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+
+.doctor-discovery-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-lg);
+}
+
+@media (min-width: 1024px) {
+  .doctor-discovery-grid {
+    grid-template-columns: 7fr 5fr;
+  }
+}
+
+.doctor-list-pane {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Doctor Discovery Card */
+.doctor-card {
+  background-color: var(--surface-card);
+  border: 1.5px solid var(--border-structural);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  box-shadow: var(--elevation-1);
+  transition: all var(--transition-fast);
+  position: relative;
+}
+
+.doctor-card:hover {
+  border-color: var(--border-emphasis);
+  box-shadow: var(--elevation-2);
+}
+
+.doctor-card.is-selected {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-fixed);
+  background: linear-gradient(to right, #FFFFFF, var(--surface-highlight));
+}
+
+.doctor-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+@media (min-width: 540px) {
+  .doctor-card-body {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+}
+
+.doctor-avatar-box {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.doctor-avatar-initials {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-lg);
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+  font-family: var(--font-headline);
+  font-size: 1.5rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.doctor-verified-badge {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  background-color: var(--color-primary);
+  color: #FFFFFF;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.doctor-info-box {
+  flex: 1;
+  min-width: 0;
+}
+
+.doctor-name {
+  font-family: var(--font-headline);
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.qualification-tag {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  background-color: var(--surface-subtle);
+  color: var(--color-neutral-muted);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+}
+
+.doctor-rating-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background-color: var(--surface-subtle);
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 0.75rem;
+}
+
+.doctor-specialty {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-secondary);
+  margin-top: 2px;
+}
+
+.doctor-facility-location {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8125rem;
+  color: var(--color-neutral-muted);
+  margin-top: 4px;
+}
+
+.doctor-meta-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-xs) var(--space-md);
+  margin-top: var(--space-sm);
+}
+
+.meta-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
   color: var(--color-neutral-muted);
 }
 
-.wizard-pill.is-active {
-  background-color: var(--color-primary);
-  border-color: var(--color-primary);
-  color: #FFFFFF;
+.meta-tag.empanelment {
+  color: var(--color-primary);
+  font-weight: 600;
 }
 
-.wizard-body {
-  padding: var(--space-xl);
-}
-
-.wizard-footer {
-  padding: var(--space-base) var(--space-xl);
+.doctor-slot-strip {
+  margin-top: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
   background-color: var(--surface-subtle);
-  border-top: 1px solid var(--border-structural);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-/* Symptoms Tag Picker */
-.symptom-tag-grid {
+  border-radius: var(--radius-md);
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-sm);
-  margin-bottom: var(--space-base);
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-xs);
 }
 
-.symptom-tag-btn {
-  padding: 8px 14px;
-  border-radius: var(--radius-pill);
-  background-color: var(--surface-card);
-  border: 1.5px solid var(--border-structural);
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--color-neutral);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  display: inline-flex;
+.slot-text {
+  font-size: 0.8125rem;
+  color: var(--color-primary);
+  display: flex;
   align-items: center;
   gap: 6px;
 }
 
-.symptom-tag-btn:hover {
-  border-color: var(--color-primary);
-  background-color: var(--surface-subtle);
+.status-dot-green {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #059669;
+  animation: pulse-dot 2s infinite;
 }
 
-.symptom-tag-btn.is-selected {
-  background-color: var(--color-primary);
-  border-color: var(--color-primary);
-  color: #FFFFFF;
-  font-weight: 600;
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
 
-/* Vitals Entry Grid with Visual Normal/Abnormal Tags */
-.vitals-input-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: var(--space-base);
-  margin-top: var(--space-base);
+.fee-text {
+  font-size: 0.8125rem;
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
-.vital-input-card {
+.doctor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+}
+
+/* Interactive Slot Booking Drawer */
+.booking-drawer-pane {
+  position: sticky;
+  top: 80px;
+}
+
+.booking-drawer-card {
   background-color: var(--surface-card);
   border: 1.5px solid var(--border-structural);
-  border-radius: var(--radius-md);
-  padding: var(--space-md);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
-  transition: border-color var(--transition-fast);
+  border-radius: var(--radius-xl);
+  padding: var(--space-lg);
+  box-shadow: var(--elevation-2);
 }
 
-.vital-input-card:focus-within {
-  border-color: var(--color-primary);
-}
-
-.vital-input-card.is-abnormal {
-  border-color: var(--risk-high-fg);
-  background-color: #FFFBF7;
-}
-
-.vital-label-row {
+.booking-drawer-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid var(--border-structural);
 }
 
-.vital-status-tag {
+.selected-doctor-summary {
+  padding: var(--space-sm);
+  background-color: var(--surface-subtle);
+  border-radius: var(--radius-md);
+  margin-top: var(--space-md);
+  border: 1px solid var(--border-structural);
+}
+
+.segmented-mode-selector {
+  display: flex;
+  align-items: center;
+  background-color: var(--surface-subtle);
+  border: 1px solid var(--border-structural);
+  border-radius: var(--radius-md);
+  padding: 3px;
+  gap: 4px;
+}
+
+.mode-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-neutral-muted);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.mode-btn.is-active {
+  background-color: #FFFFFF;
+  color: var(--color-primary);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  font-weight: 700;
+}
+
+.slot-date-chips {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-xs);
+}
+
+.date-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 6px;
+  background-color: var(--surface-card);
+  border: 1.5px solid var(--border-structural);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.date-chip:hover {
+  border-color: var(--border-emphasis);
+  background-color: var(--surface-subtle);
+}
+
+.date-chip.is-selected {
+  background-color: var(--color-primary-light);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.time-slot-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-xs);
+}
+
+.time-slot-btn {
+  padding: 8px 10px;
+  background-color: var(--surface-card);
+  border: 1.5px solid var(--border-structural);
+  border-radius: var(--radius-md);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-neutral);
+  cursor: pointer;
+  text-align: center;
+  transition: all var(--transition-fast);
+}
+
+.time-slot-btn:hover {
+  border-color: var(--color-primary);
+}
+
+.time-slot-btn.is-selected {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #FFFFFF;
+}
+
+.booking-confirm-box {
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--border-structural);
+}
+
+.fee-free-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #065F46;
+  background-color: #D1FAE5;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+}
+
+/* ==========================================================================
+   APPOINTMENT CARDS
+   ========================================================================== */
+.appointment-card {
+  background-color: var(--surface-card);
+  border: 1px solid var(--border-structural);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  box-shadow: var(--elevation-1);
+}
+
+.appointment-card.is-upcoming {
+  border-left: 4px solid var(--color-primary);
+}
+
+.appointment-card.is-past {
+  border-left: 4px solid var(--color-neutral-subtle);
+  opacity: 0.9;
+}
+
+.appointment-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: var(--space-sm);
+}
+
+.appointment-doctor-name {
+  font-family: var(--font-headline);
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--color-neutral);
+  margin-top: 4px;
+}
+
+.token-pill {
+  font-family: var(--font-numeric);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  background-color: var(--color-primary-light);
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  margin-top: 4px;
+  width: fit-content;
+  margin-left: auto;
+}
+
+.appointment-detail-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-sm) 0;
+  border-top: 1px solid var(--surface-subtle);
+  border-bottom: 1px solid var(--surface-subtle);
+}
+
+.appointment-outcome-box {
+  background-color: var(--surface-subtle);
+  border-radius: var(--radius-sm);
+  padding: var(--space-sm);
+  margin-top: var(--space-sm);
+  font-size: 0.8125rem;
+}
+
+.appointment-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--space-sm);
+}
+
+/* Status Pills */
+.status-pill {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  letter-spacing: 0.03em;
+}
+
+.status-pill.status-confirmed, .status-pill.status-approved {
+  background-color: #D1FAE5;
+  color: #065F46;
+}
+
+.status-pill.status-pending {
+  background-color: #FEF3C7;
+  color: #92400E;
+}
+
+.status-pill.status-completed {
+  background-color: var(--surface-subtle);
+  color: var(--color-neutral-muted);
+}
+
+/* ==========================================================================
+   PATIENT PORTAL & ABHA CARD GRAPHIC
+   ========================================================================== */
+.patient-portal-layout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  max-width: var(--max-content-width);
+  margin: 0 auto;
+}
+
+.citizen-profile-card {
+  background-color: var(--surface-card);
+  border: 1px solid var(--border-structural);
+  border-radius: var(--radius-xl);
+  padding: var(--space-xl);
+  box-shadow: var(--elevation-1);
+}
+
+.citizen-avatar-wrap {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+  font-family: var(--font-headline);
+  font-size: 1.375rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.citizen-avatar-verified {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  background-color: #059669;
+  color: #FFFFFF;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Patient Portal Main Layout */
+.patient-portal-layout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  max-width: var(--max-content-width);
+  margin: 0 auto;
+}
+
+/* Citizen Welcome Hero */
+.citizen-welcome-hero {
+  background-color: var(--surface-card);
+  border: 1px solid var(--border-structural);
+  border-radius: var(--radius-xl);
+  padding: var(--space-lg) var(--space-xl);
+  box-shadow: var(--elevation-1);
+}
+
+.citizen-abha-pill {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  background-color: var(--surface-container-low);
+  padding: var(--space-md) var(--space-lg);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-structural);
+}
+
+.abha-icon-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background-color: var(--color-primary);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.copy-btn-icon {
+  background: transparent;
+  border: none;
+  color: var(--color-secondary);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+.copy-btn-icon:hover {
+  background-color: var(--surface-container);
+  color: var(--color-primary);
+}
+
+/* Hero Next Appointment Card (Stitch fa074673) */
+.patient-hero-appointment-card {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--surface-card);
+  border: 1px solid var(--border-structural);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--elevation-2);
+}
+
+.hero-card-accent-bar {
+  height: 6px;
+  width: 100%;
+  background: linear-gradient(to right, var(--color-secondary), var(--color-primary));
+}
+
+.hero-card-content {
+  padding: var(--space-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}
+
+@media (min-width: 1200px) {
+  .hero-card-content {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.hero-card-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.doctor-hero-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-lg);
+  background-color: var(--surface-container);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.hero-purpose-box {
+  background-color: var(--surface-container-low);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-top: var(--space-xs);
+  color: var(--color-neutral);
+}
+
+.hero-card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  min-width: 240px;
+}
+
+/* Action Badges / Pills */
+.badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.badge-pill-secondary {
+  background-color: #E0F2FE;
+  color: #0369A1;
+}
+
+.badge-pill-neutral {
+  background-color: var(--surface-container-high);
+  color: var(--color-neutral);
+}
+
+.badge-pill-success {
+  background-color: #DCFCE7;
+  color: #166534;
+}
+
+/* 4 Citizen Action Tiles Grid */
+.citizen-action-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-base);
+}
+
+.citizen-action-tile {
+  background-color: var(--surface-card);
+  border: 1px solid var(--border-structural);
+  border-radius: var(--radius-xl);
+  padding: var(--space-lg);
+  box-shadow: var(--elevation-1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 140px;
+  transition: all var(--transition-fast);
+}
+
+.citizen-action-tile.is-clickable:hover {
+  cursor: pointer;
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+  box-shadow: var(--elevation-2);
+}
+
+.citizen-action-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Patient Home Bento Grid: 8 Cols / 4 Cols */
+.patient-home-bento-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-xl);
+}
+
+@media (min-width: 1100px) {
+  .patient-home-bento-grid {
+    grid-template-columns: 8fr 4fr;
+  }
+}
+
+/* Medicine Schedule Rows & Doses */
+.medicine-dose-row {
+  padding: var(--space-md);
+  border-radius: var(--radius-lg);
+  background-color: var(--surface-container-low);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  transition: all var(--transition-fast);
+}
+
+@media (min-width: 560px) {
+  .medicine-dose-row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.medicine-dose-row.is-due {
+  background-color: #FEF3C7;
+  border: 1.5px solid #F59E0B;
+}
+
+.medicine-dose-row.is-taken {
+  background-color: var(--surface-subtle);
+  opacity: 0.95;
+}
+
+.medicine-dose-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.medicine-dose-icon.is-morning { background-color: #FEF3C7; color: #D97706; }
+.medicine-dose-icon.is-afternoon { background-color: #E0F2FE; color: #0284C7; }
+.medicine-dose-icon.is-night { background-color: #EDE9FE; color: #7C3AED; }
+
+.dosage-instruction-tag {
   font-size: 0.6875rem;
   font-weight: 700;
   padding: 1px 6px;
   border-radius: var(--radius-sm);
+  background-color: rgba(14, 72, 52, 0.12);
+  color: var(--color-primary);
 }
 
-.vital-status-tag.normal {
-  background-color: var(--risk-low-bg);
-  color: var(--risk-low-fg);
-}
-
-.vital-status-tag.high {
-  background-color: var(--risk-high-bg);
-  color: var(--risk-high-fg);
-}
-
-/* ==========================================================================
-   FACILITY FINDER CARDS & CAPABILITY MATRICES
-   ========================================================================== */
-.facility-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-base);
-}
-
-.facility-status-pill {
+.badge-taken {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
   font-size: 0.75rem;
   font-weight: 700;
-  padding: 3px 8px;
+  background-color: var(--surface-container-highest);
+  color: var(--color-primary);
+}
+
+/* Jan Aushadhi Progress Banner */
+.jan-aushadhi-refill-banner {
+  margin-top: var(--space-lg);
+  padding: var(--space-md);
+  background-color: var(--surface-container-low);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+@media (min-width: 560px) {
+  .jan-aushadhi-refill-banner {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+/* Recent Healthcare Activity Feed */
+.citizen-activity-feed {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding-left: var(--space-lg);
+  margin-top: var(--space-sm);
+}
+
+.citizen-activity-feed::before {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background-color: var(--surface-container-high);
+}
+
+.activity-feed-item {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+}
+
+.activity-bullet {
+  position: absolute;
+  left: -24px;
+  top: 6px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 3px solid #FFFFFF;
+  box-shadow: 0 0 0 1px var(--border-structural);
+}
+.activity-bullet.is-primary { background-color: var(--color-primary); }
+.activity-bullet.is-secondary { background-color: var(--color-secondary); }
+.activity-bullet.is-neutral { background-color: var(--color-neutral-muted); }
+
+.activity-content-box {
+  width: 100%;
+  background-color: var(--surface-subtle);
+  border: 1px solid var(--border-structural);
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+}
+
+/* Care Reminder Pills */
+.care-reminder-pill {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background-color: var(--surface-subtle);
+  border: 1px solid var(--border-structural);
+  border-radius: var(--radius-md);
+}
+
+.reminder-icon-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.reminder-icon-circle.is-primary { background-color: var(--color-primary-light); color: var(--color-primary); }
+.reminder-icon-circle.is-secondary { background-color: #E0F2FE; color: #0369A1; }
+.reminder-icon-circle.is-tint { background-color: #FEF3C7; color: #92400E; }
+
+/* Patient Help Card */
+.patient-help-card {
+  background-color: var(--color-primary);
+  color: #FFFFFF;
+  border-radius: var(--radius-xl);
+  padding: var(--space-lg);
+  box-shadow: var(--elevation-2);
+}
+
+.helpline-link-row {
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  background-color: #FFFFFF;
+  color: var(--color-neutral);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-decoration: none;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  transition: all var(--transition-fast);
+}
+.helpline-link-row:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+}
+
+.helpline-link-row.is-emergency {
+  background-color: #FEE2E2;
+  color: #991B1B;
+}
+
+.registered-phc-box {
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  background-color: var(--color-primary-container);
+  color: #FFFFFF;
+  margin-top: 4px;
+}
+
+.decision-support-box {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  background-color: var(--surface-container);
+  border-radius: var(--radius-lg);
+}
+
+/* Detailed Prescription Card */
+.prescription-detailed-card {
+  background-color: var(--surface-card);
+  border: 1px solid var(--border-structural);
+  border-radius: var(--radius-lg);
+  padding: var(--space-base);
+  box-shadow: var(--elevation-1);
+}
+
+/* Clinical Record Card */
+.clinical-record-card {
+  background-color: var(--surface-card);
+  border: 1px solid var(--border-structural);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  box-shadow: var(--elevation-1);
+}
+
+/* Notification Card */
+.notification-card {
+  background-color: var(--surface-card);
+  border: 1px solid var(--border-structural);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md) var(--space-lg);
+  box-shadow: var(--elevation-1);
+}
+.notification-card.is-unread {
+  border-left: 4px solid var(--color-secondary);
+  background-color: #F8FBFE;
+}
+
+/* ABHA Card Graphic Preview */
+.abha-card-container {
+  padding: 0;
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+  border: 2px solid #0A3425;
+}
+
+.abha-card-inner {
+  background: linear-gradient(135deg, #003021 0%, #0E4834 60%, #1D587A 100%);
+  color: #FFFFFF;
+  padding: var(--space-xl);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--elevation-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.abha-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255,255,255,0.2);
+  padding-bottom: var(--space-sm);
+}
+
+.abdm-pill-white {
+  background-color: #FFFFFF;
+  color: #0E4834;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  padding: 2px 8px;
   border-radius: var(--radius-pill);
+  letter-spacing: 0.06em;
 }
 
-.facility-status-pill.available {
-  background-color: var(--risk-low-bg);
-  color: var(--risk-low-fg);
+.abha-qr-box {
+  background-color: #FFFFFF;
+  padding: 8px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
 
-.facility-status-pill.busy {
-  background-color: var(--risk-moderate-bg);
-  color: var(--risk-moderate-fg);
+.abha-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.6875rem;
+  color: #A8DAB5;
+  border-top: 1px solid rgba(255,255,255,0.2);
+  padding-top: var(--space-xs);
 }
 
 /* ==========================================================================
-   DOCTOR TELE-TRIAGE & CONSULTATION PANE
+   DOCTOR & CLINICAL WORKSPACE
    ========================================================================== */
 .doctor-consult-layout {
   display: grid;
-  grid-template-columns: 320px 1fr;
+  grid-template-columns: 1fr;
   gap: var(--space-xl);
+}
+
+@media (min-width: 1024px) {
+  .doctor-consult-layout {
+    grid-template-columns: 340px 1fr;
+  }
 }
 
 .patient-queue-list {
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
-  max-height: calc(100vh - 200px);
+  max-height: calc(100vh - 220px);
   overflow-y: auto;
 }
 
@@ -301,7 +1263,6 @@
   box-shadow: 0 0 0 2px var(--color-secondary-container);
 }
 
-/* Tele-consultation Action Box */
 .clinical-notes-box {
   background-color: var(--surface-card);
   border: 1px solid var(--border-structural);
@@ -311,53 +1272,245 @@
 }
 
 /* ==========================================================================
-   CITIZEN ABHA PORTAL WORKSPACE (from Stitch screens 2431b0db & 5770725d)
+   ASHA WORKER SPLIT BENTO & FIELD WORKSPACES (Stitch Reference 1ff47252)
    ========================================================================== */
-.patient-portal-layout {
+.hero-asha-banner {
+  background: linear-gradient(135deg, #003021 0%, #0E4834 55%, #165B43 100%);
+  color: #FFFFFF;
+  border-radius: var(--radius-xl);
+  padding: var(--space-xl);
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
   gap: var(--space-lg);
-  max-width: var(--max-content-width);
-  margin: 0 auto;
+  box-shadow: var(--elevation-2);
+  position: relative;
+  overflow: hidden;
 }
 
-.citizen-bento-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-lg);
-}
-
-@media (min-width: 1024px) {
-  .citizen-bento-grid {
-    grid-template-columns: 8fr 4fr;
+@media (min-width: 900px) {
+  .hero-asha-banner {
+    flex-direction: row;
+    align-items: center;
   }
 }
 
-.prescription-list-table {
-  width: 100%;
-  border-collapse: collapse;
+.hero-asha-banner::after {
+  content: "";
+  position: absolute;
+  right: -40px;
+  bottom: -40px;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(182, 239, 211, 0.2) 0%, transparent 70%);
+  pointer-events: none;
 }
 
-.prescription-list-table th {
-  padding: 10px 12px;
+/* 8-Node Continuity Rail */
+.asha-continuity-rail {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-xs);
+  position: relative;
+}
+
+@media (min-width: 640px) {
+  .asha-continuity-rail {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .asha-continuity-rail {
+    grid-template-columns: repeat(8, 1fr);
+  }
+}
+
+.continuity-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--space-xs);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.continuity-node:hover {
   background-color: var(--surface-subtle);
+  transform: translateY(-1px);
+}
+
+.continuity-node .node-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: var(--surface-container);
+  color: var(--color-primary-container);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.continuity-node.is-completed .node-circle {
+  background-color: var(--color-primary-container);
+  color: #FFFFFF;
+}
+
+.continuity-node.is-active {
+  background-color: rgba(182, 239, 211, 0.4);
+  border: 1px solid var(--color-primary-fixed);
+}
+
+.continuity-node.is-active .node-circle {
+  background-color: var(--color-primary-container);
+  color: #FFFFFF;
+  box-shadow: 0 0 0 3px var(--color-primary-fixed);
+}
+
+.continuity-node.is-active-focus {
+  background-color: rgba(164, 216, 255, 0.3);
+  border: 1px solid var(--color-secondary-container);
+}
+
+.continuity-node.is-active-focus .node-circle {
+  background-color: var(--color-secondary);
+  color: #FFFFFF;
+}
+
+.continuity-node.is-urgent .node-circle {
+  background-color: var(--risk-emergency-bg);
+  color: var(--risk-emergency-fg);
+}
+
+.continuity-node .node-title {
   font-size: 0.75rem;
   font-weight: 700;
-  text-transform: uppercase;
+  color: var(--color-neutral);
+  line-height: 1.2;
+}
+
+.continuity-node .node-sub {
+  font-size: 0.6875rem;
   color: var(--color-neutral-muted);
-  border-bottom: 1px solid var(--border-structural);
-  text-align: left;
+  line-height: 1.2;
 }
 
-.prescription-list-table td {
-  padding: 12px;
-  border-bottom: 1px solid var(--surface-subtle);
+/* ASHA Field Card */
+.asha-field-card {
+  background-color: var(--surface-card);
+  border: 1px solid var(--border-structural);
+  border-radius: var(--radius-lg);
+  padding: var(--space-base);
+  box-shadow: var(--elevation-1);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  transition: all var(--transition-fast);
+}
+
+.asha-field-card:hover {
+  box-shadow: var(--elevation-2);
+  transform: translateY(-1px);
+}
+
+.asha-field-card.is-urgent {
+  border-left: 4px solid var(--risk-emergency-fg);
+}
+
+.asha-field-card.is-high {
+  border-left: 4px solid var(--risk-high-fg);
+}
+
+.asha-field-card.is-maternal {
+  border-left: 4px solid var(--color-primary-container);
+}
+
+.asha-field-card.is-pediatric {
+  border-left: 4px solid var(--color-secondary);
+}
+
+.asha-field-card.is-secondary-ref {
+  border-left: 4px solid var(--color-secondary);
+}
+
+.asha-vitals-pill-grid {
+  background-color: var(--surface-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: var(--space-xs);
+  font-size: 0.8125rem;
+}
+
+.badge-overdue-time {
+  background-color: var(--risk-emergency-bg);
+  color: var(--risk-emergency-fg);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.badge-scheduled-time {
+  background-color: var(--surface-container);
+  color: var(--color-neutral);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Referral Workflow Rail */
+.referral-workflow-rail {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 4px 0;
+}
+
+.ref-flow-step {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  font-size: 0.75rem;
+  font-weight: 600;
+  background-color: var(--surface-subtle);
+  color: var(--color-neutral-muted);
+  white-space: nowrap;
+}
+
+.ref-flow-step.is-done {
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.ref-flow-step.is-active {
+  background-color: var(--color-secondary);
+  color: #FFFFFF;
+}
+
+.ref-flow-arrow {
+  color: var(--color-neutral-muted);
   font-size: 0.875rem;
+  font-weight: bold;
 }
 
-/* ==========================================================================
-   ASHA OPERATIONAL SPLIT BENTO (8 Cols Queue / 4 Cols Live Facility)
-   ========================================================================== */
 .asha-split-bento {
   display: grid;
   grid-template-columns: 1fr;
@@ -385,15 +1538,204 @@
 }
 
 /* ==========================================================================
-   RESPONSIVE ADJUSTMENTS
+   UNIFIED ROLE-DETECTION HEALTHCARE LOGIN (Stitch Screen 4dfc2395)
+   ========================================================================== */
+.unified-auth-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-base);
+  width: 100%;
+}
+
+.auth-sync-ribbon {
+  width: 100%;
+  background-color: var(--surface-container-high);
+  padding: 6px var(--space-lg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: var(--radius-md);
+}
+
+.auth-identity-bar {
+  width: 100%;
+  background-color: var(--surface-card);
+  padding: var(--space-md) var(--space-lg);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-structural);
+  box-shadow: var(--elevation-1);
+}
+
+.auth-badge-certified {
+  background-color: var(--surface-container);
+  color: var(--color-primary);
+  padding: 4px 12px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.auth-tag-federated {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  background-color: var(--surface-container-high);
+  color: var(--color-primary);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.role-pill-detector {
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  background-color: var(--surface-container-highest);
+  color: var(--color-neutral-muted);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all var(--transition-fast);
+}
+
+.role-pill-detector.is-patient {
+  background-color: var(--color-secondary-light);
+  color: var(--color-secondary);
+}
+
+.role-pill-detector.is-asha {
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.role-pill-detector.is-doctor {
+  background-color: var(--surface-container-highest);
+  color: var(--color-primary-container);
+}
+
+.role-pill-detector.is-admin {
+  background-color: var(--risk-moderate-bg);
+  color: var(--risk-moderate-fg);
+}
+
+.auth-mode-tab {
+  background-color: var(--surface-container);
+  color: var(--color-neutral);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  padding: 8px 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.auth-mode-tab:hover {
+  background-color: var(--surface-container-high);
+}
+
+.auth-mode-tab.is-active {
+  background-color: var(--color-primary-container);
+  color: #FFFFFF;
+  border-color: var(--color-primary-container);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+.sample-login-pill {
+  padding: 4px 8px;
+  background-color: var(--surface-card);
+  color: var(--color-neutral);
+  border: 1px solid var(--border-structural);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all var(--transition-fast);
+}
+
+.sample-login-pill:hover {
+  background-color: var(--surface-container-high);
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+}
+
+.cadre-card {
+  background-color: var(--surface-card);
+  border: 1px solid var(--border-structural);
+  border-radius: var(--radius-xl);
+  padding: var(--space-base);
+  box-shadow: var(--elevation-1);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.cadre-card:hover {
+  box-shadow: var(--elevation-3);
+  transform: translateY(-2px);
+  border-color: var(--color-primary);
+}
+
+.cadre-card.is-selected {
+  outline: 2px solid var(--color-primary);
+  background-color: var(--surface-container-low);
+}
+
+.cadre-card.is-citizen { border-left: 4px solid var(--color-secondary); }
+.cadre-card.is-asha { border-left: 4px solid var(--color-primary-container); }
+.cadre-card.is-doctor { border-left: 4px solid var(--color-primary); }
+.cadre-card.is-admin { border-left: 4px solid #B45309; }
+
+.cadre-icon-box {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cadre-tier-badge {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+}
+
+/* ==========================================================================
+   RESPONSIVE OVERRIDES
    ========================================================================== */
 @media (max-width: 900px) {
-  .view-grid-2col, .doctor-consult-layout, .citizen-bento-grid, .asha-split-bento {
+  .view-grid-2col, .doctor-consult-layout, .citizen-bento-grid, .asha-split-bento, .doctor-discovery-grid {
     grid-template-columns: 1fr;
     gap: var(--space-base);
   }
   .view-grid-3col {
     grid-template-columns: 1fr;
   }
+  .booking-drawer-pane {
+    position: static;
+  }
 }
+
 

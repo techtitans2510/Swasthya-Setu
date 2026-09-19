@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SwasthyaSetu - Rural Healthcare Continuity Platform</title>
   <meta name="description"
-    content="Offline-first rural healthcare continuity platform connecting frontline ASHA workers, doctors, and public health facilities across India.">
+    content="Offline-first rural healthcare continuity platform connecting patients, frontline ASHA workers, doctors, and public health administrators across India.">
   <link rel="icon" type="image/svg+xml" href="src/assets/emblem.svg">
 
   <!-- Google Material Symbols Outlined & Typography -->
@@ -16,7 +16,7 @@
     href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
     rel="stylesheet">
 
-  <!-- Design System CSS Foundations -->
+  <!-- Design System CSS Foundations (Stitch Alignment) -->
   <link rel="stylesheet" href="src/styles/tokens.css">
   <link rel="stylesheet" href="src/styles/base.css">
   <link rel="stylesheet" href="src/styles/components.css">
@@ -29,29 +29,35 @@
     <!-- Top Application Header -->
     <header class="app-header">
       <div class="flex items-center gap-md">
-        <a href="index.html" class="header-brand">
-          <img src="src/assets/emblem.svg" alt="SwasthyaSetu Emblem" class="brand-emblem">
+        <!-- Centralized Logo Branding Placeholder -->
+        <a href="index.html" class="header-brand" title="SwasthyaSetu - Rural Healthcare Continuity Platform">
+          <div class="brand-logo-wrap">
+            <img src="src/assets/emblem.svg" alt="SwasthyaSetu Emblem" class="brand-emblem">
+          </div>
           <div class="brand-title-group">
             <span class="brand-title" data-i18n="app_title">SwasthyaSetu</span>
-            <span class="brand-subtitle" data-i18n="app_subtitle">Rural Healthcare Continuity Network</span>
+            <span class="brand-subtitle" data-i18n="app_subtitle">Rural Healthcare Network</span>
           </div>
         </a>
 
-        <!-- Emergency 108 Call Pill (from Stitch design) -->
+        <!-- Emergency 108 Call Pill (Stitch reference) -->
         <a href="tel:108" class="header-emergency-pill" title="National Ambulance & Emergency Dispatch">
           <span class="material-symbols-outlined text-[16px]">emergency</span>
-          <span>108 Emergency</span>
+          <span data-i18n="emergency_108">108 Emergency</span>
         </a>
       </div>
 
-      <!-- Header Controls: Role Switcher, Language & Network Simulator -->
+      <!-- Header Controls: 4-Role Switcher, Language & Offline Mode Sync -->
       <div class="header-actions">
-        <!-- Role Switcher (4 Roles: ASHA, Doctor, Admin, Patient) -->
+        <!-- Role Switcher (4 Distinct Personas + Unified Login Gateway) -->
         <div class="role-badge-selector" title="Switch User Cadre Role">
-          <button class="role-btn is-active" data-role="ASHA" data-i18n="role_asha">ASHA Worker</button>
+          <button class="role-btn" data-role="AUTH" id="btnRoleAuth" title="Unified Role-Detection Login Gateway">
+            <span class="material-symbols-outlined text-[13px]">lock_person</span> Unified Login
+          </button>
+          <button class="role-btn is-active" data-role="PATIENT" data-i18n="role_patient">Patient (ABHA)</button>
+          <button class="role-btn" data-role="ASHA" data-i18n="role_asha">ASHA Worker</button>
           <button class="role-btn" data-role="DOCTOR" data-i18n="role_doctor">Doctor (MO)</button>
           <button class="role-btn" data-role="ADMIN" data-i18n="role_admin">Health Admin</button>
-          <button class="role-btn" data-role="PATIENT" data-i18n="role_patient">Patient (ABHA)</button>
         </div>
 
         <!-- Language Selector -->
@@ -107,8 +113,7 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
             d="M18.364 5.636a9 9 0 010 12.728m-2.828-2.828a5 5 0 010-7.072m-2.828 2.828a1 1 0 010 1.414M12 12h.01M3 3l18 18" />
         </svg>
-        <span data-i18n="offline_banner_text">Working offline • Your records are stored locally and will sync once
-          connectivity returns.</span>
+        <span data-i18n="offline_banner_text">Working offline • Your records are stored securely on this device and will sync once connectivity returns.</span>
       </div>
       <div class="offline-ribbon-actions">
         <span class="badge-role" id="pendingSyncBadge" style="background:#FDE68A; color:#92400E; display:none;">0</span>
@@ -119,17 +124,17 @@
       </div>
     </div>
 
-    <!-- Application Body: Sidebar + Main Workspace -->
+    <!-- Application Body: Dynamic Sidebar + Main Content -->
     <div class="app-body">
       <!-- Desktop Sidebar -->
       <aside class="app-sidebar">
         <div class="sidebar-user-card">
-          <div class="user-avatar" id="currentUserAvatar">SM</div>
+          <div class="user-avatar" id="currentUserAvatar">RP</div>
           <div class="user-meta">
-            <span class="user-name" id="currentUserName">Sunita More</span>
-            <span class="text-xs text-muted" id="currentUserRole">ASHA Frontline Activist</span>
-            <span class="badge-role badge-role-asha" id="currentUserBadge"
-              style="margin-top:4px; width:fit-content;">ASHA</span>
+            <span class="user-name" id="currentUserName">Ramesh Patil</span>
+            <span class="text-xs text-muted" id="currentUserRole">Citizen / ABHA Beneficiary</span>
+            <span class="badge-role badge-role-patient" id="currentUserBadge"
+              style="margin-top:4px; width:fit-content;">Citizen</span>
           </div>
         </div>
 
@@ -140,11 +145,12 @@
           </nav>
         </div>
 
+        <!-- Dynamic Role Organization / Location Footer -->
         <div style="margin-top:auto; padding-top:var(--space-md); border-top:1px solid var(--border-structural);">
-          <div class="text-xs text-muted">
-            <strong>Sub-Centre Ambegaon</strong><br>
-            Block: Junnar • Dist: Pune<br>
-            <span style="color:var(--color-primary); font-weight:600;">National Health Mission • MoHFW</span>
+          <div class="text-xs text-muted" id="sidebarOrgFooter">
+            <strong>Village: Talwade (Sector 4)</strong><br>
+            Block: Shirur • Dist: Pune<br>
+            <span style="color:var(--color-primary); font-weight:600;">ABHA ID: 91-4029-1823-0192</span>
           </div>
         </div>
       </aside>
@@ -155,43 +161,23 @@
       </main>
     </div>
 
-    <!-- Mobile Bottom Navigation Bar (Shown on small screens) -->
-    <nav class="mobile-bottom-nav">
-      <a href="#" class="mobile-nav-link is-active" data-view="dashboard">
-        <svg class="mobile-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-        </svg>
-        <span>Home</span>
-      </a>
-      <a href="#" class="mobile-nav-link" data-view="registration">
-        <svg class="mobile-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-        </svg>
-        <span>Register</span>
-      </a>
-      <a href="#" class="mobile-nav-link" data-view="facilities">
-        <svg class="mobile-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-        </svg>
-        <span>Facilities</span>
-      </a>
-      <a href="#" class="mobile-nav-link" data-view="referrals">
-        <svg class="mobile-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-        </svg>
-        <span>Referrals</span>
-      </a>
+    <!-- Dynamic Mobile Bottom Navigation Bar (Rendered per role on small screens) -->
+    <nav class="mobile-bottom-nav" id="mobileBottomNav">
+      <!-- Dynamically rendered by app.js based on active role -->
     </nav>
   </div>
 
-  <!-- Application Logic Modules -->
+  <!-- Application Logic Modules in Dependency Order -->
   <script src="src/data/mock-data.js"></script>
   <script src="src/i18n/i18n.js"></script>
   <script src="src/services/offline/offline-store.js"></script>
   <script src="src/services/triage/triage-engine.js"></script>
+  <script src="src/components/ui-components.js"></script>
+  <script src="src/pages/patient/patient-pages.js"></script>
+  <script src="src/pages/asha/asha-pages.js"></script>
+  <script src="src/pages/doctor/doctor-pages.js"></script>
+  <script src="src/pages/admin/admin-pages.js"></script>
+  <script src="src/pages/auth/auth-pages.js"></script>
   <script src="src/app.js"></script>
 </body>
 
