@@ -1,6 +1,8 @@
 /**
  * SwasthyaSetu Application Core Controller
- * Handles Multi-Role Workflows (ASHA, Doctor, Admin), 1-Click Demo Journey, and Dynamic Views
+ * Handles Multi-Role Workflows (ASHA, Doctor, Admin, Patient/Citizen),
+ * 1-Click SIH Demo Journey, ABDM Citizen Portal, and Dynamic Views
+ * Design Source of Truth: Stitch Project 11062066934146902009
  */
 
 class SwasthyaApp {
@@ -10,6 +12,7 @@ class SwasthyaApp {
     this.activePatient = JSON.parse(JSON.stringify(SWASTHYA_DATA.demoPatient));
     this.selectedFacility = SWASTHYA_DATA.facilities[0];
     this.registeredPatients = [...SWASTHYA_DATA.recentPatients];
+    this.citizenData = JSON.parse(JSON.stringify(SWASTHYA_DATA.citizenUser));
     this.wizardStep = 1;
 
     this.init();
@@ -32,7 +35,7 @@ class SwasthyaApp {
   }
 
   bindEvents() {
-    // Role switcher in header
+    // Role switcher in header (ASHA, DOCTOR, ADMIN, PATIENT)
     document.querySelectorAll(".role-btn").forEach(btn => {
       btn.addEventListener("click", e => {
         const role = e.currentTarget.getAttribute("data-role");
@@ -55,7 +58,7 @@ class SwasthyaApp {
     if (btnOnline) {
       btnOnline.addEventListener("click", () => {
         window.offlineStore.setOnlineStatus(true);
-        this.showToast("Connected to State Public Health Network (Cloud Active)", "info");
+        this.showToast("Connected to State Public Health Grid (Cloud Active)", "info");
       });
     }
     if (btnOffline) {
@@ -106,7 +109,7 @@ class SwasthyaApp {
       btn.classList.toggle("is-active", btn.getAttribute("data-role") === role);
     });
 
-    // Update user display
+    // Update user display in sidebar
     const userRoleEl = document.getElementById("currentUserRole");
     const userNameEl = document.getElementById("currentUserName");
     const userAvatarEl = document.getElementById("currentUserAvatar");
@@ -121,20 +124,28 @@ class SwasthyaApp {
         userBadgeEl.textContent = "ASHA";
       }
     } else if (role === "DOCTOR") {
-      if (userNameEl) userNameEl.textContent = "Dr. Anjali Deshmukh";
-      if (userRoleEl) userRoleEl.textContent = "Medical Officer (PHC Khed)";
-      if (userAvatarEl) userAvatarEl.textContent = "AD";
+      if (userNameEl) userNameEl.textContent = "Dr. A. Kulkarni";
+      if (userRoleEl) userRoleEl.textContent = "Medical Officer (Shirur 24x7 PHC)";
+      if (userAvatarEl) userAvatarEl.textContent = "AK";
       if (userBadgeEl) {
         userBadgeEl.className = "badge-role badge-role-doctor";
-        userBadgeEl.textContent = "Doctor";
+        userBadgeEl.textContent = "Doctor (MO)";
       }
     } else if (role === "ADMIN") {
       if (userNameEl) userNameEl.textContent = "Dr. S. K. Patil";
-      if (userRoleEl) userRoleEl.textContent = "District Health Officer (Pune)";
+      if (userRoleEl) userRoleEl.textContent = "District Health Officer (Pune Grid)";
       if (userAvatarEl) userAvatarEl.textContent = "SP";
       if (userBadgeEl) {
         userBadgeEl.className = "badge-role badge-role-admin";
         userBadgeEl.textContent = "Admin";
+      }
+    } else if (role === "PATIENT") {
+      if (userNameEl) userNameEl.textContent = "Ramesh Patil";
+      if (userRoleEl) userRoleEl.textContent = "Citizen / ABHA Beneficiary";
+      if (userAvatarEl) userAvatarEl.textContent = "RP";
+      if (userBadgeEl) {
+        userBadgeEl.className = "badge-role badge-role-patient";
+        userBadgeEl.textContent = "Citizen";
       }
     }
 
@@ -150,61 +161,84 @@ class SwasthyaApp {
     if (role === "ASHA") {
       navHtml = `
         <a href="#" class="nav-item is-active" data-view="dashboard">
-          <svg class="nav-item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+          <span class="material-symbols-outlined nav-item-icon">grid_view</span>
           <span data-i18n="nav_dashboard">Dashboard</span>
         </a>
         <a href="#" class="nav-item" data-view="registration">
-          <svg class="nav-item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+          <span class="material-symbols-outlined nav-item-icon">person_add</span>
           <span data-i18n="dash_quick_register">Register Patient</span>
         </a>
+        <a href="#" class="nav-item" data-view="triage">
+          <span class="material-symbols-outlined nav-item-icon">vital_signs</span>
+          <span data-i18n="nav_triage">Triage & Vitals</span>
+        </a>
         <a href="#" class="nav-item" data-view="patients">
-          <svg class="nav-item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+          <span class="material-symbols-outlined nav-item-icon">groups</span>
           <span data-i18n="nav_patients">Village Patients</span>
-          <span class="nav-badge-count">24</span>
+          <span class="nav-badge-count">28</span>
         </a>
         <a href="#" class="nav-item" data-view="facilities">
-          <svg class="nav-item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+          <span class="material-symbols-outlined nav-item-icon">local_hospital</span>
           <span data-i18n="nav_facilities">Facility Finder</span>
         </a>
         <a href="#" class="nav-item" data-view="referrals">
-          <svg class="nav-item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
-          <span data-i18n="nav_referrals">Referrals</span>
-          <span class="nav-badge-count" style="background:var(--risk-high-bg); color:var(--risk-high-fg);">2</span>
+          <span class="material-symbols-outlined nav-item-icon">transfer_within_a_station</span>
+          <span data-i18n="nav_referrals">Active Referrals</span>
+          <span class="nav-badge-count" style="background:var(--risk-high-bg); color:var(--risk-high-fg);">3</span>
         </a>
         <a href="#" class="nav-item" data-view="timeline">
-          <svg class="nav-item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <span class="material-symbols-outlined nav-item-icon">route</span>
           <span data-i18n="nav_records">Health Timeline</span>
         </a>
       `;
     } else if (role === "DOCTOR") {
       navHtml = `
         <a href="#" class="nav-item is-active" data-view="dashboard">
-          <svg class="nav-item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-          <span>Clinical Queue</span>
+          <span class="material-symbols-outlined nav-item-icon">stethoscope</span>
+          <span data-i18n="nav_consultations">Clinical Station</span>
           <span class="nav-badge-count" style="background:var(--risk-emergency-bg); color:var(--risk-emergency-fg);">2 Urgent</span>
         </a>
         <a href="#" class="nav-item" data-view="referrals">
-          <svg class="nav-item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
-          <span>Referral Inbox</span>
+          <span class="material-symbols-outlined nav-item-icon">forward_to_inbox</span>
+          <span data-i18n="nav_referrals">Referral Inbox</span>
         </a>
         <a href="#" class="nav-item" data-view="timeline">
-          <svg class="nav-item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          <span class="material-symbols-outlined nav-item-icon">clinical_notes</span>
           <span>ABHA Longitudinal Record</span>
         </a>
       `;
     } else if (role === "ADMIN") {
       navHtml = `
         <a href="#" class="nav-item is-active" data-view="dashboard">
-          <svg class="nav-item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-          <span>District Analytics</span>
+          <span class="material-symbols-outlined nav-item-icon">analytics</span>
+          <span data-i18n="nav_analytics">District Overview</span>
         </a>
         <a href="#" class="nav-item" data-view="facilities">
-          <svg class="nav-item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+          <span class="material-symbols-outlined nav-item-icon">local_hospital</span>
           <span>Facility Capacity</span>
         </a>
         <a href="#" class="nav-item" data-view="referrals">
-          <svg class="nav-item-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+          <span class="material-symbols-outlined nav-item-icon">swap_horiz</span>
           <span>Transfer Logistics</span>
+        </a>
+      `;
+    } else if (role === "PATIENT") {
+      navHtml = `
+        <a href="#" class="nav-item is-active" data-view="dashboard">
+          <span class="material-symbols-outlined nav-item-icon">home_health</span>
+          <span data-i18n="nav_my_health">My Health Home</span>
+        </a>
+        <a href="#" class="nav-item" data-view="timeline">
+          <span class="material-symbols-outlined nav-item-icon">clinical_notes</span>
+          <span data-i18n="nav_records">Health Records</span>
+        </a>
+        <a href="#" class="nav-item" data-view="facilities">
+          <span class="material-symbols-outlined nav-item-icon">local_hospital</span>
+          <span data-i18n="nav_facilities">Facility Finder</span>
+        </a>
+        <a href="#" class="nav-item" data-view="referrals">
+          <span class="material-symbols-outlined nav-item-icon">transfer_within_a_station</span>
+          <span data-i18n="nav_referrals">Referral Tracking</span>
         </a>
       `;
     }
@@ -237,7 +271,22 @@ class SwasthyaApp {
     const mainContainer = document.getElementById("mainContent");
     if (!mainContainer) return;
 
-    if (this.currentRole === "DOCTOR") {
+    if (this.currentRole === "PATIENT") {
+      if (this.currentView === "dashboard") {
+        mainContainer.innerHTML = this.renderPatientPortal();
+        this.bindPatientPortalEvents();
+      } else if (this.currentView === "timeline") {
+        mainContainer.innerHTML = this.renderTimelineView();
+      } else if (this.currentView === "facilities") {
+        mainContainer.innerHTML = this.renderFacilitiesView();
+        this.bindFacilityEvents();
+      } else if (this.currentView === "referrals") {
+        mainContainer.innerHTML = this.renderReferralsView();
+      } else {
+        mainContainer.innerHTML = this.renderPatientPortal();
+        this.bindPatientPortalEvents();
+      }
+    } else if (this.currentRole === "DOCTOR") {
       mainContainer.innerHTML = this.renderDoctorDashboard();
       this.bindDoctorEvents();
     } else if (this.currentRole === "ADMIN") {
@@ -280,21 +329,83 @@ class SwasthyaApp {
   }
 
   /* ==========================================================================
-     RENDERERS: ASHA DASHBOARD & JOURNEY
+     RENDERERS: ASHA DASHBOARD & 7-STAGE STEPPER (Stitch Screen 897d27b1)
      ========================================================================== */
   renderAshaDashboard() {
     return `
-      <!-- Page Header -->
-      <div class="page-header">
-        <div class="page-title-group">
-          <h1>Frontline Operational Hub</h1>
-          <p>Ambegaon Sub-Centre Area • Assigned Cadre: Sunita More (ASHA ID: MH-PUN-0841)</p>
+      <!-- TOP BANNERS CONTAINER: Offline Synchronization & SIH Active Demonstration Flow -->
+      <div style="display:flex; flex-direction:column; gap:var(--space-sm); margin-bottom:var(--space-lg);">
+        <!-- Offline Sync Banner -->
+        <div class="alert alert-warning" style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:var(--space-sm);">
+          <div class="flex items-center gap-sm">
+            <span class="material-symbols-outlined" style="font-size:24px; color:var(--sync-offline-fg);">wifi_off</span>
+            <div>
+              <strong style="color:var(--sync-offline-fg);">Local Offline Storage Active:</strong>
+              <span class="text-sm">2 vitals logs queued for sync. All records cached securely in device sandbox.</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-xs">
+            <span class="text-xs text-muted font-bold uppercase hidden md:inline">SQLite Local DB</span>
+            <button class="btn btn-primary btn-sm" style="background:#92400E; border-color:#92400E;" id="syncNowAshaBtn" onclick="app.triggerSyncSimulation()">
+              <span class="material-symbols-outlined text-[16px]">sync</span>
+              <span>Sync Now</span>
+            </button>
+          </div>
         </div>
-        <div class="flex gap-sm">
-          <button class="btn btn-secondary btn-sm" id="quickRegisterBtn">
-            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-            <span data-i18n="dash_quick_register">Register Patient</span>
+
+        <!-- Active Demo Hero Journey Header -->
+        <div class="demo-hero-banner">
+          <div style="max-width:780px;">
+            <div class="flex items-center gap-xs" style="margin-bottom:var(--space-xs);">
+              <span class="demo-hero-pill">
+                <span class="material-symbols-outlined text-[14px]">bolt</span> SIH Demonstration Flow
+              </span>
+              <span class="text-xs" style="color:var(--color-primary-fixed-dim);">• Case ID: SH-2024-0982</span>
+            </div>
+            <h2 style="color:#FFFFFF; font-size:1.375rem; margin-bottom:4px;">
+              Patient: Ramesh Patil, 62 Y — High Risk Detected
+            </h2>
+            <p class="text-sm" style="color:var(--color-primary-fixed-dim); line-height:1.4;">
+              Follow uninterrupted continuum of care: ASHA Village Survey → Digital Triage & Vitals → Cluster PHC Shirur Referral → Medical Officer Tele-Triage → Continuity Log.
+            </p>
+          </div>
+          <button class="btn btn-secondary btn-sm font-bold" id="startDemoJourneyBtn" onclick="app.runDemoJourney()" style="background:var(--color-tertiary-light); color:var(--color-tertiary-container); border:none;">
+            <span class="material-symbols-outlined text-[18px]">explore</span>
+            <span>Inspect Active Journey</span>
           </button>
+        </div>
+      </div>
+
+      <!-- SIGNATURE UX COMPONENT: THE 7-STAGE PATIENT JOURNEY STEPPER -->
+      <div class="card" style="margin-bottom:var(--space-xl);">
+        <div class="flex items-center justify-between" style="margin-bottom:var(--space-sm); padding-bottom:var(--space-xs); border-bottom:1px solid var(--surface-subtle);">
+          <div>
+            <div class="flex items-center gap-xs">
+              <span class="material-symbols-outlined text-primary text-[22px]">route</span>
+              <h3 class="card-title">Patient Journey Stepper</h3>
+            </div>
+            <p class="text-xs text-muted">End-to-End ABDM Integrated Continuum for Ramesh Patil (ABHA: 91-4029-1823-0192)</p>
+          </div>
+          <div class="flex items-center gap-xs">
+            <span class="badge-role badge-role-asha">Facility: Shirur 24x7 PHC</span>
+            <span class="risk-chip risk-high flex items-center gap-xs">
+              <span class="sync-dot-live"></span> Stage 4/7 Active
+            </span>
+          </div>
+        </div>
+
+        <!-- Stepper Graphic Flow -->
+        ${this.renderJourneyStepper(4)}
+
+        <!-- Clinical Disclaimer & Guardrail Note -->
+        <div class="clinical-disclaimer" style="margin-top:var(--space-md);">
+          <span class="material-symbols-outlined text-primary text-[20px]">policy</span>
+          <div>
+            <strong style="color:var(--color-neutral);">Decision Support & Clinical Guardrail:</strong>
+            <span data-i18n="triage_disclaimer">
+              Algorithm calculates predictive severity indices based on frontline vitals (SpO2, Pulse, SBP). Definitive diagnostic confirmation is strictly authorized by registered PHC Medical Officers under MoHFW Indian Public Health Standards (IPHS).
+            </span>
+          </div>
         </div>
       </div>
 
@@ -302,111 +413,236 @@ class SwasthyaApp {
       <div class="metrics-grid">
         <div class="metric-tile">
           <div class="metric-tile-top">
-            <span class="metric-tile-label" data-i18n="dash_handled_today">Patients Handled Today</span>
+            <span class="metric-tile-label" data-i18n="dash_handled_today">Daily Census</span>
             <div class="metric-tile-icon is-green">
-              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+              <span class="material-symbols-outlined text-[18px]">groups</span>
             </div>
           </div>
-          <div class="metric-tile-value">14</div>
-          <div class="metric-tile-footer text-muted">✓ 100% Home visits completed</div>
+          <div class="flex items-baseline gap-xs">
+            <span class="metric-tile-value">14</span>
+            <span class="text-xs font-bold" style="background:var(--color-tertiary-light); color:var(--color-tertiary-container); padding:2px 6px; border-radius:12px;">+3 pending</span>
+          </div>
+          <div class="metric-tile-footer text-muted">Talwade Sector 4</div>
         </div>
 
         <div class="metric-tile">
           <div class="metric-tile-top">
-            <span class="metric-tile-label" data-i18n="dash_high_risk">High-Risk Cases</span>
+            <span class="metric-tile-label" data-i18n="dash_high_risk">High Risk Cases</span>
             <div class="metric-tile-icon is-orange">
-              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+              <span class="material-symbols-outlined text-[18px]">warning</span>
             </div>
           </div>
-          <div class="metric-tile-value text-bold" style="color:var(--risk-high-fg);">2</div>
-          <div class="metric-tile-footer" style="color:var(--risk-high-fg);">Immediate clinical attention required</div>
+          <div class="flex items-baseline gap-xs">
+            <span class="metric-tile-value text-bold" style="color:var(--risk-high-fg);">3</span>
+            <span class="text-xs font-bold" style="background:var(--risk-emergency-bg); color:var(--risk-emergency-fg); padding:2px 6px; border-radius:12px;">Action Req.</span>
+          </div>
+          <div class="metric-tile-footer" style="color:var(--risk-high-fg);">1 Transport En Route</div>
         </div>
 
         <div class="metric-tile">
           <div class="metric-tile-top">
-            <span class="metric-tile-label" data-i18n="dash_pending_referrals">Active Referrals</span>
+            <span class="metric-tile-label" data-i18n="dash_pending_referrals">Pending PHC Referrals</span>
             <div class="metric-tile-icon is-blue">
-              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+              <span class="material-symbols-outlined text-[18px]">transfer_within_a_station</span>
             </div>
           </div>
-          <div class="metric-tile-value">2</div>
-          <div class="metric-tile-footer text-muted">1 at PHC Khed • 1 En route District Hosp</div>
+          <div class="flex items-baseline gap-xs">
+            <span class="metric-tile-value">4</span>
+            <span class="text-xs font-bold" style="background:var(--color-secondary-light); color:var(--color-secondary); padding:2px 6px; border-radius:12px;">2 Accepted</span>
+          </div>
+          <div class="metric-tile-footer text-muted">2 En Route to Shirur</div>
         </div>
 
         <div class="metric-tile">
           <div class="metric-tile-top">
             <span class="metric-tile-label" data-i18n="dash_followups_due">Follow-ups Due</span>
             <div class="metric-tile-icon is-amber">
-              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              <span class="material-symbols-outlined text-[18px]">event_repeat</span>
             </div>
           </div>
-          <div class="metric-tile-value">3</div>
-          <div class="metric-tile-footer text-muted">2 Post-natal • 1 Hypertension</div>
+          <div class="flex items-baseline gap-xs">
+            <span class="metric-tile-value">8</span>
+            <span class="text-xs font-bold" style="background:var(--color-primary-fixed); color:var(--color-primary); padding:2px 6px; border-radius:12px;">HTN & ANC</span>
+          </div>
+          <div class="metric-tile-footer text-muted">Next visit: Tomorrow</div>
         </div>
       </div>
 
-      <!-- Signature Reusable Patient Journey Component Showcase -->
-      <div class="card" style="margin-bottom:var(--space-xl);">
-        <div class="card-header">
-          <div>
-            <h3 class="card-title">Active Continuity Pathway: Ramesh Patil</h3>
-            <p class="text-sm text-muted">ABHA: <span class="numeric-id">91-4820-1928-3341</span> • Age: 62 M • Ambegaon</p>
-          </div>
-          <span class="risk-chip risk-high">HIGH RISK</span>
+      <!-- Primary Quick Actions Bar -->
+      <div class="quick-action-strip">
+        <div class="flex items-center gap-xs">
+          <span class="material-symbols-outlined text-primary text-[20px]">touch_app</span>
+          <strong class="text-primary font-headline" style="font-size:1.0625rem;">Field Actions</strong>
         </div>
-        
-        <!-- Journey Stepper -->
-        ${this.renderJourneyStepper(4)}
-
-        <div class="flex items-center justify-between" style="margin-top:var(--space-md); padding-top:var(--space-md); border-top:1px solid var(--surface-subtle);">
-          <div class="text-sm">
-            <span class="text-muted">Current System Status:</span> 
-            <strong>Referral Packet Dispatched to PHC Khed (Oxygen Bay Ready)</strong>
-          </div>
-          <button class="btn btn-referral btn-sm" id="viewActiveReferralBtn">
-            Track Referral Status →
+        <div class="flex flex-wrap items-center gap-sm">
+          <button class="btn btn-primary" id="quickRegisterBtn">
+            <span class="material-symbols-outlined text-[18px]">person_add</span>
+            <span data-i18n="dash_quick_register">+ Register New Patient</span>
+          </button>
+          <button class="btn btn-secondary" onclick="app.navigateTo('triage')">
+            <span class="material-symbols-outlined text-[18px] text-amber-600">vital_signs</span>
+            <span data-i18n="dash_record_vitals">Record Vitals & Triage</span>
+          </button>
+          <button class="btn btn-referral" onclick="app.navigateTo('facilities')">
+            <span class="material-symbols-outlined text-[18px]">local_hospital</span>
+            <span data-i18n="dash_facility_finder">Nearest Facility Finder</span>
           </button>
         </div>
       </div>
 
-      <!-- Recent Village Patients Queue -->
-      <div class="card">
-        <div class="card-header">
-          <h3 class="card-title" data-i18n="dash_recent_patients">Recent Village Patients</h3>
-          <span class="text-xs text-muted">Updated: Synced Live</span>
+      <!-- Active Patient Priority Table & Live Facility Snapshot (Split Bento) -->
+      <div class="asha-split-bento">
+        <!-- Active Clinical Referrals Queue (8 Columns) -->
+        <div class="card" style="display:flex; flex-direction:column; justify-content:space-between;">
+          <div>
+            <div class="card-header">
+              <div>
+                <h3 class="card-title" data-i18n="dash_recent_patients">Active Referral & Triage Queue</h3>
+                <p class="text-xs text-muted">Live cluster queue verified with ABDM Health ID stack</p>
+              </div>
+              <span class="sync-status-pill is-online">● 3 Cases Monitored</span>
+            </div>
+
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Patient / ABHA ID</th>
+                    <th>Village / Age</th>
+                    <th>Vitals Snapshot</th>
+                    <th>Risk Tier</th>
+                    <th>Transit Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${this.registeredPatients.map(p => `
+                    <tr>
+                      <td>
+                        <strong>${p.name}</strong><br>
+                        <span class="font-numeric text-xs text-muted flex items-center gap-xs">
+                          <span class="material-symbols-outlined text-[14px]">badge</span>${p.abhaId}
+                        </span>
+                      </td>
+                      <td>
+                        <strong>${p.village}</strong><br>
+                        <span class="text-xs text-muted">${p.age}y / ${p.gender}</span>
+                      </td>
+                      <td>
+                        <span class="text-xs font-bold ${p.riskLevel === 'HIGH' || p.riskLevel === 'EMERGENCY' ? 'text-danger' : ''}">
+                          SpO2: ${p.spo2} • BP: ${p.bp}
+                        </span>
+                      </td>
+                      <td>
+                        <span class="risk-chip ${p.riskClass}">${p.riskLevel}</span>
+                      </td>
+                      <td>
+                        <span class="text-xs font-bold text-primary">${p.status}</span>
+                      </td>
+                      <td>
+                        <button class="btn btn-secondary btn-sm" onclick="app.inspectPatient('${p.id}')">
+                          View File →
+                        </button>
+                      </td>
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div style="margin-top:var(--space-md); padding-top:var(--space-sm); border-top:1px solid var(--surface-subtle); display:flex; align-items:center; justify-content:space-between;">
+            <span class="text-xs text-muted flex items-center gap-xs">
+              <span class="material-symbols-outlined text-[16px] text-primary">security</span> All records signed by ASHA Sunita Tai • Verified via Shirur PHC Gateway
+            </span>
+            <a href="#" onclick="app.navigateTo('patients')" class="text-xs text-primary font-bold">View Full Register (28 Patients) →</a>
+          </div>
         </div>
-        <div class="table-container">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Patient Details</th>
-                <th>ABHA Health ID</th>
-                <th>Risk Classification</th>
-                <th>Vitals Snapshot</th>
-                <th>Continuity Status</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${this.registeredPatients.map(p => `
-                <tr>
-                  <td>
-                    <strong>${p.name}</strong><br>
-                    <span class="text-xs text-muted">${p.age}y / ${p.gender} • ${p.village}</span>
-                  </td>
-                  <td><span class="abha-badge">${p.abhaId}</span></td>
-                  <td><span class="risk-chip ${p.riskClass}">${p.riskLevel}</span></td>
-                  <td>
-                    <span class="text-xs">SpO2: <strong>${p.spo2}</strong> | BP: <strong>${p.bp}</strong></span>
-                  </td>
-                  <td><span class="text-xs text-bold">${p.status}</span></td>
-                  <td>
-                    <button class="btn btn-secondary btn-sm" onclick="app.inspectPatient('${p.id}')">Open File</button>
-                  </td>
-                </tr>
-              `).join("")}
-            </tbody>
-          </table>
+
+        <!-- Live Facility Capability & Ready Bed Snapshot (4 Columns) -->
+        <div style="display:flex; flex-direction:column; gap:var(--space-md);">
+          <!-- Live Facility Card -->
+          <div class="facility-live-card">
+            <div class="flex items-center justify-between">
+              <span class="badge-role badge-role-asha">PHC Facility</span>
+              <span class="text-xs text-muted font-bold flex items-center gap-xs">
+                <span class="material-symbols-outlined text-[15px]">distance</span> 4.2 km
+              </span>
+            </div>
+            <div>
+              <h4 style="font-size:1.0625rem; font-weight:700;">Shirur Primary Health Centre</h4>
+              <p class="text-xs text-muted">Shirur 24x7 Government Primary Health Centre</p>
+            </div>
+
+            <!-- Readiness Indicators -->
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <div class="facility-readiness-row">
+                <span class="text-xs font-bold flex items-center gap-xs">
+                  <span class="material-symbols-outlined text-[18px] text-primary">medical_services</span> 24x7 Emergency Services
+                </span>
+                <span class="tag-capability">Active</span>
+              </div>
+              <div class="facility-readiness-row">
+                <span class="text-xs font-bold flex items-center gap-xs">
+                  <span class="material-symbols-outlined text-[18px] text-secondary">air</span> Oxygen Beds
+                </span>
+                <span class="text-xs font-bold text-secondary">4 / 6 Free</span>
+              </div>
+              <div class="facility-readiness-row">
+                <span class="text-xs font-bold flex items-center gap-xs">
+                  <span class="material-symbols-outlined text-[18px] text-primary">person_check</span> Medical Officer on Duty
+                </span>
+                <span class="text-xs font-bold text-primary">Dr. A. Kulkarni</span>
+              </div>
+            </div>
+
+            <button class="btn btn-referral btn-sm" style="width:100%;" onclick="app.showToast('Calling Shirur PHC Emergency Desk: 02138-222104', 'info')">
+              <span class="material-symbols-outlined text-[16px]">call</span>
+              <span>Call PHC Emergency Desk</span>
+            </button>
+          </div>
+
+          <!-- Demographic Triage Distribution Card with SVG Donut Chart -->
+          <div class="card" style="padding:var(--space-base);">
+            <div class="flex items-center justify-between" style="margin-bottom:var(--space-xs);">
+              <h4 style="font-size:0.9375rem; font-weight:700;">Triage Distribution</h4>
+              <span class="text-xs text-muted font-bold">Shirur Block</span>
+            </div>
+
+            <div class="flex items-center gap-md" style="margin:var(--space-sm) 0;">
+              <div class="donut-chart-container">
+                <svg class="w-full h-full" viewBox="0 0 36 36" style="transform: rotate(-90deg);">
+                  <circle cx="18" cy="18" r="15.915" fill="transparent" stroke="#e0f2e9" stroke-width="3.8"></circle>
+                  <circle cx="18" cy="18" r="15.915" fill="transparent" stroke="#0e4834" stroke-width="3.8" stroke-dasharray="60 40" stroke-dashoffset="0"></circle>
+                  <circle cx="18" cy="18" r="15.915" fill="transparent" stroke="#f59e0b" stroke-width="3.8" stroke-dasharray="25 75" stroke-dashoffset="-60"></circle>
+                  <circle cx="18" cy="18" r="15.915" fill="transparent" stroke="#b91c1c" stroke-width="3.8" stroke-dasharray="15 85" stroke-dashoffset="-85"></circle>
+                </svg>
+                <div class="donut-chart-text">
+                  <span style="font-size:1.125rem; font-weight:700; line-height:1;">148</span>
+                  <span class="text-xs text-muted" style="font-size:0.625rem;">Total</span>
+                </div>
+              </div>
+
+              <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
+                <div class="flex items-center justify-between text-xs">
+                  <span class="flex items-center gap-xs"><span style="width:8px; height:8px; border-radius:50%; background:var(--color-primary);"></span> Low Risk</span>
+                  <strong>60%</strong>
+                </div>
+                <div class="flex items-center justify-between text-xs">
+                  <span class="flex items-center gap-xs"><span style="width:8px; height:8px; border-radius:50%; background:var(--risk-moderate-fg);"></span> Moderate Risk</span>
+                  <strong style="color:var(--risk-moderate-fg);">25%</strong>
+                </div>
+                <div class="flex items-center justify-between text-xs">
+                  <span class="flex items-center gap-xs"><span style="width:8px; height:8px; border-radius:50%; background:var(--risk-emergency-fg);"></span> High / Urgent</span>
+                  <strong style="color:var(--risk-emergency-fg);">15%</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="alert alert-info" style="padding:6px 10px; font-size:0.75rem; margin-top:4px;">
+              <strong>NCD Screening Coverage:</strong> 82% Completed across Sub-Centres
+            </div>
+          </div>
         </div>
       </div>
     `;
@@ -414,34 +650,274 @@ class SwasthyaApp {
 
   renderJourneyStepper(activeStep = 4) {
     const steps = [
-      { id: 1, label: "Home Survey (ASHA)", i18nKey: "step_patient" },
-      { id: 2, label: "Vitals Assessment", i18nKey: "step_assessment" },
-      { id: 3, label: "Triage Decision", i18nKey: "step_triage" },
-      { id: 4, label: "Facility Match", i18nKey: "step_facility" },
-      { id: 5, label: "Referral Issued", i18nKey: "step_referral" },
-      { id: 6, label: "Doctor Consult", i18nKey: "step_doctor" },
-      { id: 7, label: "Follow-up", i18nKey: "step_followup" }
+      { id: 1, label: "1. Profile", desc: "Done (Talwade)", time: "09:14 AM", i18nKey: "step_patient" },
+      { id: 2, label: "2. Assessment", desc: "Vitals Stored", time: "09:22 AM", i18nKey: "step_assessment" },
+      { id: 3, label: "3. Triage", desc: "High Flagged", time: "09:24 AM", i18nKey: "step_triage" },
+      { id: 4, label: "4. Facility", desc: "PHC Shirur Sel.", time: "Bed Reserved", i18nKey: "step_facility" },
+      { id: 5, label: "5. Referral Slip", desc: "Dispatched", time: "In Transit", i18nKey: "step_referral" },
+      { id: 6, label: "6. Doctor Care", desc: "Waiting MO", time: "Dr. Kulkarni", i18nKey: "step_doctor" },
+      { id: 7, label: "7. Follow-up", desc: "7 Day Target", time: "Village Visit", i18nKey: "step_followup" }
     ];
 
+    const progressPct = ((activeStep - 1) / (steps.length - 1)) * 100;
+
     return `
-      <div class="patient-journey-stepper">
-        ${steps.map(s => {
-          let stepClass = "";
-          let iconContent = s.id;
-          if (s.id < activeStep) {
-            stepClass = "is-completed";
-            iconContent = "✓";
-          } else if (s.id === activeStep) {
-            stepClass = "is-active";
-            iconContent = "●";
-          }
-          return `
-            <div class="journey-step ${stepClass}">
-              <div class="journey-node">${iconContent}</div>
-              <div class="journey-label" data-i18n="${s.i18nKey}">${s.label}</div>
+      <div class="stepper-container">
+        <div class="stepper-rail">
+          <div class="stepper-rail-progress" style="width:${progressPct}%;"></div>
+        </div>
+
+        <div class="patient-journey-stepper">
+          ${steps.map(s => {
+            let stepClass = "";
+            let iconContent = s.id;
+            if (s.id < activeStep) {
+              stepClass = "is-completed";
+              iconContent = '<span class="material-symbols-outlined text-[18px]">check</span>';
+            } else if (s.id === activeStep) {
+              stepClass = "is-active";
+              iconContent = '<span class="material-symbols-outlined text-[18px]">apartment</span>';
+            }
+            return `
+              <div class="journey-step ${stepClass}">
+                <div class="journey-node">${iconContent}</div>
+                <div class="journey-label" data-i18n="${s.i18nKey}">${s.label}</div>
+                <div class="journey-subtext">${s.desc}</div>
+                <div class="text-xs text-muted" style="font-size:0.625rem;">${s.time}</div>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      </div>
+    `;
+  }
+
+  /* ==========================================================================
+     RENDERERS: CITIZEN ABHA PORTAL (Stitch Screen 2431b0db)
+     ========================================================================== */
+  renderPatientPortal() {
+    const c = this.citizenData;
+
+    return `
+      <div class="patient-portal-layout">
+        <!-- Citizen Verified Profile Card -->
+        <div class="citizen-profile-card">
+          <div class="flex items-center gap-md">
+            <div class="citizen-avatar-wrap">
+              RP
+              <div class="citizen-avatar-verified">
+                <span class="material-symbols-outlined text-[14px]">verified</span>
+              </div>
             </div>
-          `;
-        }).join("")}
+
+            <div>
+              <div class="flex flex-wrap items-center gap-xs" style="margin-bottom:4px;">
+                <h1 style="font-size:1.5rem; font-weight:700; color:var(--color-primary);">${c.name}</h1>
+                <span class="badge-role badge-role-patient">${c.age} Y • ${c.gender}</span>
+                <span class="abdm-badge">
+                  <span class="material-symbols-outlined text-[14px]">health_and_safety</span> ${c.statusBadge}
+                </span>
+              </div>
+
+              <div class="flex flex-wrap items-center gap-md text-xs text-muted">
+                <span class="flex items-center gap-xs">
+                  ABHA ID: <strong class="numeric-id text-primary">${c.abhaId}</strong>
+                  <button class="btn btn-ghost btn-sm" style="min-height:24px; padding:0 4px;" onclick="app.copyAbhaId('${c.abhaId}')" title="Copy ABHA ID">
+                    <span class="material-symbols-outlined text-[16px] text-secondary">content_copy</span>
+                  </button>
+                </span>
+                <span class="flex items-center gap-xs">
+                  <span class="material-symbols-outlined text-[15px] text-secondary">alternate_email</span> ${c.abhaAddress}
+                </span>
+              </div>
+
+              <div class="flex flex-wrap items-center gap-md text-xs" style="margin-top:6px;">
+                <span class="flex items-center gap-xs">
+                  <span class="material-symbols-outlined text-[16px] text-primary">volunteer_activism</span>
+                  <strong>ASHA Cadre:</strong> ${c.assignedAsha}
+                </span>
+                <span class="flex items-center gap-xs">
+                  <span class="material-symbols-outlined text-[16px] text-secondary">local_hospital</span>
+                  <strong>Linkage PHC:</strong> ${c.linkagePhc}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-sm">
+            <button class="btn btn-primary btn-sm" onclick="app.openAbhaModal()">
+              <span class="material-symbols-outlined text-[18px]">qr_code_2</span>
+              <span data-i18n="btn_download_qr">Download ABHA Card (QR)</span>
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="app.requestPatientSync()">
+              <span class="material-symbols-outlined text-[18px]">sync</span>
+              <span data-i18n="btn_request_sync">Request Record Sync</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Active Continuum Phase Card (Stage 6 Active) -->
+        <div class="card">
+          <div class="flex flex-wrap items-center justify-between gap-sm">
+            <div class="flex items-center gap-sm">
+              <span class="sync-dot-live" style="width:12px; height:12px;"></span>
+              <div>
+                <span class="text-xs font-bold text-secondary uppercase tracking-wider" data-i18n="active_continuum">Active Continuum Phase</span>
+                <h3 style="font-size:1.125rem; font-weight:700; color:var(--color-primary);">${c.activePhase}</h3>
+              </div>
+            </div>
+            <div class="tag-capability" style="font-size:0.8125rem; padding:4px 10px;">
+              <span class="material-symbols-outlined text-[16px]">verified_user</span>
+              <span>Protocol Compliance: ${c.protocolCompliance}</span>
+            </div>
+          </div>
+
+          <!-- Continuum Progress Mini Bar -->
+          <div class="continuum-progress-bar">
+            <div class="continuum-grid">
+              <div class="continuum-node is-done"><span>✓ 1. Sxn Triage</span></div>
+              <div class="continuum-node is-done"><span>✓ 2. ANM Lab</span></div>
+              <div class="continuum-node is-done"><span>✓ 3. PHC Visit</span></div>
+              <div class="continuum-node is-done"><span>✓ 4. ECG Rx</span></div>
+              <div class="continuum-node is-done"><span>✓ 5. Med Issuance</span></div>
+              <div class="continuum-node is-active"><span>● 6. Home Protocol</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4 Citizen Quick Action Tiles -->
+        <div class="citizen-action-grid">
+          <div class="citizen-action-tile" onclick="app.requestJanAushadhiRefill()">
+            <div class="flex items-center gap-md">
+              <div class="citizen-action-icon" style="background:#DCFCE7; color:#166534;">
+                <span class="material-symbols-outlined text-[24px]">local_pharmacy</span>
+              </div>
+              <div>
+                <strong data-i18n="jan_aushadhi_title">Jan Aushadhi Refill</strong>
+                <p class="text-xs text-muted" data-i18n="jan_aushadhi_desc">Shirur Hub • Free Subsidized</p>
+              </div>
+            </div>
+            <span class="material-symbols-outlined text-muted text-[18px]">arrow_forward</span>
+          </div>
+
+          <div class="citizen-action-tile" onclick="app.notifyAsha()">
+            <div class="flex items-center gap-md">
+              <div class="citizen-action-icon" style="background:#E0F2FE; color:#0369A1;">
+                <span class="material-symbols-outlined text-[24px]">calendar_add_on</span>
+              </div>
+              <div>
+                <strong data-i18n="notify_asha_title">Notify ASHA Sunita</strong>
+                <p class="text-xs text-muted" data-i18n="notify_asha_desc">Request early visit or call</p>
+              </div>
+            </div>
+            <span class="material-symbols-outlined text-muted text-[18px]">arrow_forward</span>
+          </div>
+
+          <div class="citizen-action-tile" onclick="app.navigateTo('timeline')">
+            <div class="flex items-center gap-md">
+              <div class="citizen-action-icon" style="background:#EDE9FE; color:#6B21A8;">
+                <span class="material-symbols-outlined text-[24px]">folder_shared</span>
+              </div>
+              <div>
+                <strong>Health Records Locker</strong>
+                <p class="text-xs text-muted">ABDM Verified Timeline</p>
+              </div>
+            </div>
+            <span class="material-symbols-outlined text-muted text-[18px]">arrow_forward</span>
+          </div>
+
+          <div class="citizen-action-tile" onclick="app.showToast('Connecting to Tele-MANAS Helpline 14416 (Toll-Free 24x7)...', 'info')">
+            <div class="flex items-center gap-md">
+              <div class="citizen-action-icon" style="background:#FEF3C7; color:#92400E;">
+                <span class="material-symbols-outlined text-[24px]">support_agent</span>
+              </div>
+              <div>
+                <strong data-i18n="tele_manas_title">Tele-MANAS & Support</strong>
+                <p class="text-xs text-muted" data-i18n="tele_manas_desc">14416 (Toll-Free Helpline)</p>
+              </div>
+            </div>
+            <span class="material-symbols-outlined text-muted text-[18px]">arrow_forward</span>
+          </div>
+        </div>
+
+        <!-- Bento Split: Active Prescriptions Locker (8 cols) & Upcoming Appointments / Consent (4 cols) -->
+        <div class="citizen-bento-grid">
+          <!-- Active Prescriptions Locker -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title" data-i18n="nav_prescriptions">Prescriptions & Active Medicines</h3>
+                <p class="text-xs text-muted">Dispensed by Shirur PHC & Jan Aushadhi Kendra</p>
+              </div>
+              <span class="tag-capability">3 Active Prescriptions</span>
+            </div>
+
+            <table class="prescription-list-table">
+              <thead>
+                <tr>
+                  <th>Medicine & Dosage</th>
+                  <th>Duration</th>
+                  <th>Scheme / Source</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${c.prescriptions.map(p => `
+                  <tr>
+                    <td>
+                      <strong>${p.medicine}</strong><br>
+                      <span class="text-xs text-muted">${p.dosage}</span>
+                    </td>
+                    <td><span class="text-xs">${p.duration}</span></td>
+                    <td>
+                      <span class="jan-aushadhi-badge">${p.source}</span>
+                    </td>
+                    <td>
+                      <span class="text-xs font-bold text-primary">${p.status}</span>
+                    </td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Upcoming Appointments & ABDM Consent -->
+          <div style="display:flex; flex-direction:column; gap:var(--space-md);">
+            <!-- Upcoming Schedule -->
+            <div class="card">
+              <div class="flex items-center justify-between" style="margin-bottom:var(--space-sm);">
+                <h4 style="font-size:0.9375rem; font-weight:700;">Upcoming Care Schedule</h4>
+                <span class="text-xs text-muted">Next 7 Days</span>
+              </div>
+
+              <div style="display:flex; flex-direction:column; gap:8px;">
+                ${c.upcomingAppointments.map(a => `
+                  <div style="padding:10px; background:var(--surface-subtle); border-radius:var(--radius-md); border:1px solid var(--border-structural);">
+                    <div class="flex items-center justify-between text-xs text-muted">
+                      <span>${a.date}</span>
+                      <span class="tag-capability" style="font-size:0.6875rem; padding:2px 6px;">${a.type}</span>
+                    </div>
+                    <strong style="font-size:0.875rem; margin-top:2px; display:block;">${a.title}</strong>
+                    <span class="text-xs text-muted">${a.location}</span>
+                  </div>
+                `).join("")}
+              </div>
+            </div>
+
+            <!-- ABDM Consent -->
+            <div class="card">
+              <div class="flex items-center justify-between" style="margin-bottom:var(--space-xs);">
+                <h4 style="font-size:0.9375rem; font-weight:700;">ABDM Consent Management</h4>
+                <span class="abdm-badge">Active</span>
+              </div>
+              <p class="text-xs text-muted" style="margin-bottom:var(--space-sm);">Federated citizen consent granted to Shirur PHC cluster under ABDM M1-M3 framework.</p>
+              <button class="btn btn-secondary btn-sm" style="width:100%;" onclick="app.showToast('ABDM Consent Audit Trail: 2 active provider links verified.', 'info')">
+                <span class="material-symbols-outlined text-[16px]">shield_person</span>
+                <span>Manage Linked Health Records</span>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     `;
   }
@@ -487,7 +963,7 @@ class SwasthyaApp {
         <div>
           <div class="form-group">
             <label class="form-label" data-i18n="form_fullname">Full Patient Name <span class="required-star">*</span></label>
-            <input type="text" class="form-input" id="regName" value="${this.activePatient.name || ''}" placeholder="e.g. Ramesh Tukaram Patil">
+            <input type="text" class="form-input" id="regName" value="${this.activePatient.name || ''}" placeholder="e.g. Ramesh Patil">
           </div>
 
           <div class="flex gap-base">
@@ -520,7 +996,7 @@ class SwasthyaApp {
             <label class="form-label" data-i18n="form_abha">ABHA Health ID (Ayushman Bharat)</label>
             <div class="input-with-addon">
               <span class="input-addon-prefix">ABHA</span>
-              <input type="text" class="form-input numeric-id" id="regAbha" value="${this.activePatient.abhaId || ''}" placeholder="91-4820-1928-3341">
+              <input type="text" class="form-input numeric-id" id="regAbha" value="${this.activePatient.abhaId || ''}" placeholder="91-4029-1823-0192">
             </div>
             <span class="form-hint">National 14-digit longitudinal health identifier</span>
           </div>
@@ -531,7 +1007,7 @@ class SwasthyaApp {
           </div>
 
           <div class="alert alert-info" style="margin-top:var(--space-md);">
-            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <span class="material-symbols-outlined text-[18px]">verified_user</span>
             <div>
               <strong>Frontline Data Protection:</strong> Patient records are encrypted and stored in device sandbox until secure synchronization with State Health Portal.
             </div>
@@ -654,7 +1130,7 @@ class SwasthyaApp {
 
         <!-- Mandatory Civic Medical Disclaimer -->
         <div class="clinical-disclaimer">
-          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+          <span class="material-symbols-outlined text-primary text-[20px]">policy</span>
           <span data-i18n="triage_disclaimer">${triageResult.disclaimer}</span>
         </div>
       </div>
@@ -755,7 +1231,7 @@ class SwasthyaApp {
       <div class="card" style="margin-bottom:var(--space-xl);">
         <div class="card-header">
           <div>
-            <span class="badge-role badge-role-anm">Active Transfer Token: REF-2026-0918</span>
+            <span class="badge-role badge-role-anm">Active Transfer Token: REF-2026-SHIRUR-0982</span>
             <h2 style="font-size:1.25rem; margin-top:4px;">${this.activePatient.name} (Age: 62)</h2>
           </div>
           <span class="sync-status-pill is-online">● State Network Synced</span>
@@ -767,18 +1243,18 @@ class SwasthyaApp {
         <div class="view-grid-2col" style="margin-top:var(--space-lg); background-color:var(--surface-subtle); padding:var(--space-md); border-radius:var(--radius-md);">
           <div>
             <h4 class="text-sm text-muted">Referring Cadre</h4>
-            <p><strong>Sunita More (ASHA)</strong><br><span class="text-xs text-muted">Ambegaon Sub-Centre</span></p>
+            <p><strong>Sunita More (ASHA)</strong><br><span class="text-xs text-muted">Talwade Sub-Centre</span></p>
             <div style="margin-top:var(--space-sm);">
               <h4 class="text-sm text-muted">Reason for Referral</h4>
-              <p class="text-sm text-bold" style="color:var(--risk-high-fg);">Hypoxia (SpO2 89%) + Hypertension (158/96)</p>
+              <p class="text-sm text-bold" style="color:var(--risk-high-fg);">Hypoxia (SpO2 92%) + Hypertension (160/98 mmHg)</p>
             </div>
           </div>
           <div>
             <h4 class="text-sm text-muted">Destination Medical Facility</h4>
-            <p><strong>${this.selectedFacility ? this.selectedFacility.name : 'Primary Health Centre Khed'}</strong><br><span class="text-xs text-muted">In-Charge: Dr. Anjali Deshmukh</span></p>
+            <p><strong>${this.selectedFacility ? this.selectedFacility.name : 'Shirur Primary Health Centre'}</strong><br><span class="text-xs text-muted">In-Charge: Dr. A. Kulkarni</span></p>
             <div style="margin-top:var(--space-sm);">
               <h4 class="text-sm text-muted">Patient Transit Status</h4>
-              <p class="text-sm"><strong>En route via 108 Ambulance (ETA: 12 Mins)</strong></p>
+              <p class="text-sm"><strong>En route via 108 Ambulance (ETA: 10 Mins)</strong></p>
             </div>
           </div>
         </div>
@@ -800,7 +1276,7 @@ class SwasthyaApp {
       <div class="page-header">
         <div class="page-title-group">
           <h1>Longitudinal Patient Health Record</h1>
-          <p>ABHA ID: <span class="numeric-id">91-4820-1928-3341</span> • <strong>${this.activePatient.name}</strong></p>
+          <p>ABHA ID: <span class="numeric-id">91-4029-1823-0192</span> • <strong>${this.activePatient.name}</strong></p>
         </div>
         <button class="btn btn-secondary btn-sm" onclick="app.navigateTo('dashboard')">Back to Dashboard</button>
       </div>
@@ -831,7 +1307,7 @@ class SwasthyaApp {
       <div class="page-header">
         <div class="page-title-group">
           <h1 data-i18n="nav_patients">Village Health Registry</h1>
-          <p>Ambegaon & Wadgaon Sub-Centre Population Records</p>
+          <p>Talwade, Pabal & Shirur Cluster Population Records</p>
         </div>
         <button class="btn btn-primary btn-sm" onclick="app.navigateTo('registration')">
           + Register New Patient
@@ -874,14 +1350,14 @@ class SwasthyaApp {
   }
 
   /* ==========================================================================
-     RENDERERS: DOCTOR & ADMIN DASHBOARDS
+     RENDERERS: DOCTOR & ADMIN DASHBOARDS (Stitch Screen 0752cfe5)
      ========================================================================== */
   renderDoctorDashboard() {
     return `
       <div class="page-header">
         <div class="page-title-group">
           <h1>Medical Officer Clinical Station</h1>
-          <p>Primary Health Centre (PHC) Khed • Dr. Anjali Deshmukh, MBBS</p>
+          <p>Shirur Primary Health Centre (PHC) • Dr. A. Kulkarni, MBBS</p>
         </div>
         <span class="badge-role badge-role-doctor">PHC Consultation Mode</span>
       </div>
@@ -910,8 +1386,8 @@ class SwasthyaApp {
           <div class="flex items-center justify-between" style="margin-bottom:var(--space-md); padding-bottom:var(--space-sm); border-bottom:1px solid var(--border-structural);">
             <div>
               <span class="badge-role badge-role-asha">Incoming Frontline Transfer</span>
-              <h2 style="font-size:1.375rem; margin-top:2px;">Ramesh Tukaram Patil (62y M)</h2>
-              <span class="text-xs text-muted">ABHA: <span class="numeric-id">91-4820-1928-3341</span></span>
+              <h2 style="font-size:1.375rem; margin-top:2px;">Ramesh Patil (62y M)</h2>
+              <span class="text-xs text-muted">ABHA: <span class="numeric-id">91-4029-1823-0192</span></span>
             </div>
             <span class="risk-chip risk-high">HIGH RISK</span>
           </div>
@@ -920,13 +1396,13 @@ class SwasthyaApp {
           ${this.renderJourneyStepper(6)}
 
           <div class="alert alert-warning" style="margin:var(--space-md) 0;">
-            <strong>Frontline Vitals at Home:</strong> SpO2: 89% (Hypoxic), BP: 158/96 mmHg, Pulse: 104 bpm, Temp: 101.4°F.<br>
+            <strong>Frontline Vitals at Home:</strong> SpO2: 92% (Hypoxic), BP: 160/98 mmHg, Pulse: 104 bpm, Temp: 101.4°F.<br>
             <em>Assessment: Acute exacerbation of COPD / Suspected lower respiratory tract infection.</em>
           </div>
 
           <div class="form-group">
             <label class="form-label">Doctor's Clinical Action & Tele-Prescription</label>
-            <textarea class="form-textarea" id="docNotes" placeholder="Enter clinical orders (e.g. High-flow nasal cannula oxygen at 4L/min, Nebulization with Salbutamol + Ipratropium, IV Ceftriaxone 1g)...">High-flow O2 initiated at 4 L/min. Nebulization with Salbutamol 2.5mg given. Re-evaluating SpO2 in 30 mins. ASHA to be notified for post-discharge home monitoring.</textarea>
+            <textarea class="form-textarea" id="docNotes" placeholder="Enter clinical orders...">High-flow O2 initiated at 4 L/min in Oxygen Bay #4. Nebulization with Salbutamol 2.5mg given. Re-evaluating SpO2 in 30 mins. ASHA Sunita More notified for post-discharge home monitoring.</textarea>
           </div>
 
           <div class="flex items-center justify-between" style="margin-top:var(--space-lg);">
@@ -947,7 +1423,7 @@ class SwasthyaApp {
       <div class="page-header">
         <div class="page-title-group">
           <h1>District Healthcare Administration Overview</h1>
-          <p>Pune District Public Health Surveillance Network • All PHCs & Sub-Centres Active</p>
+          <p>Pune District Public Health Surveillance Network • Shirur & Junnar Clusters</p>
         </div>
         <span class="badge-role badge-role-admin">Admin Portal</span>
       </div>
@@ -956,7 +1432,7 @@ class SwasthyaApp {
         <div class="metric-tile">
           <div class="metric-tile-top">
             <span class="metric-tile-label">Total Population Registered</span>
-            <div class="metric-tile-icon is-green">★</div>
+            <div class="metric-tile-icon is-green"><span class="material-symbols-outlined text-[18px]">groups</span></div>
           </div>
           <div class="metric-tile-value">1,248</div>
           <div class="metric-tile-footer text-muted">Across 24 Sub-Centres</div>
@@ -964,7 +1440,7 @@ class SwasthyaApp {
         <div class="metric-tile">
           <div class="metric-tile-top">
             <span class="metric-tile-label">High-Risk Escalations</span>
-            <div class="metric-tile-icon is-orange">!</div>
+            <div class="metric-tile-icon is-orange"><span class="material-symbols-outlined text-[18px]">warning</span></div>
           </div>
           <div class="metric-tile-value text-bold" style="color:var(--risk-high-fg);">7</div>
           <div class="metric-tile-footer" style="color:var(--risk-high-fg);">All linked to PHC Oxygen beds</div>
@@ -972,15 +1448,15 @@ class SwasthyaApp {
         <div class="metric-tile">
           <div class="metric-tile-top">
             <span class="metric-tile-label">Active Transfer Referrals</span>
-            <div class="metric-tile-icon is-blue">→</div>
+            <div class="metric-tile-icon is-blue"><span class="material-symbols-outlined text-[18px]">swap_horiz</span></div>
           </div>
           <div class="metric-tile-value">12</div>
-          <div class="metric-tile-footer text-muted">Average transit time: 18 mins</div>
+          <div class="metric-tile-footer text-muted">Average transit time: 14 mins</div>
         </div>
         <div class="metric-tile">
           <div class="metric-tile-top">
             <span class="metric-tile-label">Offline-to-Cloud Sync Rate</span>
-            <div class="metric-tile-icon is-green">✓</div>
+            <div class="metric-tile-icon is-green"><span class="material-symbols-outlined text-[18px]">cloud_done</span></div>
           </div>
           <div class="metric-tile-value">99.4%</div>
           <div class="metric-tile-footer text-muted">Zero record loss</div>
@@ -1023,14 +1499,9 @@ class SwasthyaApp {
   }
 
   /* ==========================================================================
-     EVENT BINDINGS & DEMO RUNNER
+     EVENT BINDINGS & DEMO RUNNERS
      ========================================================================== */
   bindDashboardEvents() {
-    const startDemoBtn = document.getElementById("startDemoJourneyBtn");
-    if (startDemoBtn) {
-      startDemoBtn.addEventListener("click", () => this.runDemoJourney());
-    }
-
     const quickRegBtn = document.getElementById("quickRegisterBtn");
     if (quickRegBtn) {
       quickRegBtn.addEventListener("click", () => {
@@ -1039,7 +1510,7 @@ class SwasthyaApp {
           name: "",
           age: "",
           gender: "Male",
-          village: "Ambegaon (Sub-Centre Area)",
+          village: "Talwade (Sector 4)",
           abhaId: "91-" + Math.floor(1000 + Math.random() * 9000) + "-" + Math.floor(1000 + Math.random() * 9000) + "-4021",
           phone: "+91 9",
           symptoms: [],
@@ -1050,11 +1521,6 @@ class SwasthyaApp {
         this.navigateTo("registration");
       });
     }
-
-    const viewActiveRefBtn = document.getElementById("viewActiveReferralBtn");
-    if (viewActiveRefBtn) {
-      viewActiveRefBtn.addEventListener("click", () => this.navigateTo("referrals"));
-    }
   }
 
   bindWizardEvents() {
@@ -1064,7 +1530,6 @@ class SwasthyaApp {
     if (nextBtn) {
       nextBtn.addEventListener("click", () => {
         if (this.wizardStep === 1) {
-          // Validate & Save step 1
           const nameInput = document.getElementById("regName");
           const ageInput = document.getElementById("regAge");
           if (!nameInput.value.trim()) {
@@ -1081,16 +1546,13 @@ class SwasthyaApp {
           this.wizardStep = 2;
           this.renderCurrentView();
         } else if (this.wizardStep === 2) {
-          // Read vitals
           this.activePatient.vitals.spo2 = parseFloat(document.getElementById("inputSpo2").value) || 98;
           this.activePatient.vitals.bpSys = parseFloat(document.getElementById("inputBpSys").value) || 120;
           this.activePatient.vitals.bpDia = parseFloat(document.getElementById("inputBpDia").value) || 80;
           this.activePatient.vitals.pulse = parseFloat(document.getElementById("inputPulse").value) || 72;
           this.activePatient.vitals.temp = document.getElementById("inputTemp").value || "98.6";
 
-          // Save to local offline store
           window.offlineStore.saveRecord("patient_assessment", this.activePatient);
-
           this.navigateTo("triage");
         }
       });
@@ -1105,7 +1567,6 @@ class SwasthyaApp {
       });
     }
 
-    // Symptom picker tags
     document.querySelectorAll(".symptom-tag-btn").forEach(btn => {
       btn.addEventListener("click", e => {
         const symptomId = e.currentTarget.getAttribute("data-symptom-id");
@@ -1157,7 +1618,7 @@ class SwasthyaApp {
     const confirmBtn = document.getElementById("confirmConsultBtn");
     if (confirmBtn) {
       confirmBtn.addEventListener("click", () => {
-        this.showToast("Consultation record saved & Follow-up assigned to ASHA Sunita More!", "success");
+        this.showToast("Consultation saved & Follow-up assigned to ASHA Sunita More!", "success");
         setTimeout(() => {
           this.setRole("ASHA");
           this.navigateTo("timeline");
@@ -1166,9 +1627,48 @@ class SwasthyaApp {
     }
   }
 
+  bindPatientPortalEvents() {
+    // Specific patient actions handled via instance methods
+  }
+
+  copyAbhaId(id) {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(id).then(() => {
+        this.showToast(`ABHA ID copied: ${id}`, "success");
+      });
+    } else {
+      this.showToast(`ABHA ID: ${id}`, "info");
+    }
+  }
+
+  openAbhaModal() {
+    this.showToast("Downloading verified Ayushman Bharat (ABHA) QR Card PDF...", "success");
+  }
+
+  requestPatientSync() {
+    this.showToast("Requesting record sync with ABDM National Health Grid...", "info");
+    setTimeout(() => {
+      this.showToast("Citizen health records synchronized with Shirur PHC!", "success");
+    }, 1000);
+  }
+
+  requestJanAushadhiRefill() {
+    this.showToast("Jan Aushadhi Subsidized Refill Requested for Amlodipine 5mg at Shirur Hub!", "success");
+  }
+
+  notifyAsha() {
+    this.showToast("Direct notification sent to ASHA Sunita More for home follow-up visit!", "success");
+  }
+
+  triggerSyncSimulation() {
+    window.offlineStore.triggerSync(count => {
+      this.showToast(`Cloud Sync Complete • ${count} record(s) synchronized with State Health Portal`, "success");
+    });
+  }
+
   runDemoJourney() {
     this.activePatient = JSON.parse(JSON.stringify(SWASTHYA_DATA.demoPatient));
-    this.selectedFacility = SWASTHYA_DATA.facilities[0]; // PHC Khed
+    this.selectedFacility = SWASTHYA_DATA.facilities[0]; // Shirur PHC
     this.showToast("Loaded Patient File: Ramesh Patil (62y, High Risk)", "info");
     this.navigateTo("triage");
   }
@@ -1208,7 +1708,7 @@ class SwasthyaApp {
         position: fixed;
         bottom: 24px;
         right: 24px;
-        background: #101E19;
+        background: #003021;
         color: #FFFFFF;
         padding: 12px 20px;
         border-radius: 8px;
@@ -1224,11 +1724,22 @@ class SwasthyaApp {
       document.body.appendChild(toast);
     }
 
+    let iconName = "info";
     let colorDot = "#34D399";
-    if (type === "warning") colorDot = "#FBBF24";
-    if (type === "emergency" || type === "error") colorDot = "#F87171";
+    if (type === "warning") {
+      colorDot = "#FBBF24";
+      iconName = "warning";
+    }
+    if (type === "emergency" || type === "error" || type === "danger") {
+      colorDot = "#F87171";
+      iconName = "error";
+    }
+    if (type === "success") {
+      colorDot = "#34D399";
+      iconName = "check_circle";
+    }
 
-    toast.innerHTML = `<span style="width:8px; height:8px; border-radius:50%; background:${colorDot};"></span> ${message}`;
+    toast.innerHTML = `<span class="material-symbols-outlined text-[18px]" style="color:${colorDot};">${iconName}</span> ${message}`;
     toast.style.opacity = "1";
     toast.style.transform = "translateY(0)";
 

@@ -311,10 +311,84 @@
 }
 
 /* ==========================================================================
+   CITIZEN ABHA PORTAL WORKSPACE (from Stitch screens 2431b0db & 5770725d)
+   ========================================================================== */
+.patient-portal-layout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  max-width: var(--max-content-width);
+  margin: 0 auto;
+}
+
+.citizen-bento-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-lg);
+}
+
+@media (min-width: 1024px) {
+  .citizen-bento-grid {
+    grid-template-columns: 8fr 4fr;
+  }
+}
+
+.prescription-list-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.prescription-list-table th {
+  padding: 10px 12px;
+  background-color: var(--surface-subtle);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--color-neutral-muted);
+  border-bottom: 1px solid var(--border-structural);
+  text-align: left;
+}
+
+.prescription-list-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--surface-subtle);
+  font-size: 0.875rem;
+}
+
+/* ==========================================================================
+   ASHA OPERATIONAL SPLIT BENTO (8 Cols Queue / 4 Cols Live Facility)
+   ========================================================================== */
+.asha-split-bento {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-lg);
+  margin-top: var(--space-lg);
+}
+
+@media (min-width: 1024px) {
+  .asha-split-bento {
+    grid-template-columns: 8fr 4fr;
+  }
+}
+
+.quick-action-strip {
+  background-color: var(--surface-card);
+  border: 1px solid var(--border-structural);
+  border-radius: var(--radius-lg);
+  padding: var(--space-base);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  box-shadow: var(--elevation-1);
+}
+
+/* ==========================================================================
    RESPONSIVE ADJUSTMENTS
    ========================================================================== */
 @media (max-width: 900px) {
-  .view-grid-2col, .doctor-consult-layout {
+  .view-grid-2col, .doctor-consult-layout, .citizen-bento-grid, .asha-split-bento {
     grid-template-columns: 1fr;
     gap: var(--space-base);
   }
@@ -322,3 +396,4 @@
     grid-template-columns: 1fr;
   }
 }
+
